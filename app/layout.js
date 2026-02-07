@@ -26,7 +26,9 @@ export default function RootLayout({ children }) {
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <div className="flex min-h-screen">
             <Sidebar />
-            <main className="flex-1 ml-0 lg:ml-96 pt-[65px] lg:pt-0">{children}</main>
+            <main className="flex-1 ml-0 lg:ml-96 pt-[65px] lg:pt-0">
+              {children}
+            </main>
           </div>
         </ThemeProvider>
       </body>

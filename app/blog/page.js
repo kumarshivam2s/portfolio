@@ -34,7 +34,7 @@ export default function BlogPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-8 lg:p-16 flex items-center justify-center">
+      <div className="min-h-screen p-4 sm:p-8 lg:p-16 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-gray-300 dark:border-gray-700 border-t-gray-600 dark:border-t-gray-400 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400 text-sm">Loading...</p>
@@ -44,9 +44,9 @@ export default function BlogPage() {
   }
 
   return (
-    <div className="min-h-screen p-8 lg:p-16">
-      <div className="max-w-4xl">
-        <h1 className="text-4xl lg:text-5xl font-bold mb-2">Blog</h1>
+    <div className="min-h-screen p-4 sm:p-8 lg:p-16">
+      <div className="max-w-4xl w-full">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2">Blog</h1>
         <p className="text-gray-600 dark:text-gray-400 mb-12">
           Thoughts, tutorials, and insights
         </p>
