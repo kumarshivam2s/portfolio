@@ -80,7 +80,7 @@ portfolio-website/
 Create `.env.local` with:
 
 `env
-MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/portfolio
+MONGODB_URI=mongodb
 ADMIN_PASSWORD_HASH=your_bcrypt_hash
 `
 

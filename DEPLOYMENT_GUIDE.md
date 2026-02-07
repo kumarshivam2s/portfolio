@@ -11,7 +11,7 @@ git init
 git add .
 git commit -m "Initial commit"
 git branch -M main
-git remote add origin https://github.com/yourusername/portfolio.git
+git remote add origin https://github.com/kumarshivam2s/portfolio.git
 git push -u origin main
 `
 
@@ -62,7 +62,7 @@ node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('YourPa
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| MONGODB_URI | MongoDB connection string | mongodb+srv://user:pass@cluster.mongodb.net/portfolio |
+| MONGODB_URI | MongoDB connection string | mongo.db |
 | ADMIN_PASSWORD_HASH | bcrypt hash of admin password | $... |
 
 ## Post-Deployment Checklist

@@ -48,6 +48,8 @@ export default function EditProject() {
     caption: "",
   });
 
+  const [uploading, setUploading] = useState(false);
+
   useEffect(() => {
     fetchProject();
   }, [projectId]);
@@ -112,6 +114,36 @@ export default function EditProject() {
         images: [...formData.images, currentImage],
       });
       setCurrentImage({ url: "", caption: "" });
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formDataUpload,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentImage({ ...currentImage, url: data.url });
+      } else {
+        const data = await response.json();
+        alert(data.error || "Failed to upload image");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Failed to upload image");
+    } finally {
+      setUploading(false);
+      e.target.value = ""; // Reset file input
     }
   };
 
@@ -291,17 +323,53 @@ export default function EditProject() {
             </h3>
 
             <div className="space-y-3 mb-4">
+              {/* Upload from computer */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Upload from Computer
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleFileUpload}
+                    disabled={uploading}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-blue-600 file:text-white file:cursor-pointer"
+                  />
+                  {uploading && (
+                    <span className="px-4 py-2 text-gray-500">
+                      Uploading...
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Max 5MB. Supported: JPEG, PNG, GIF, WebP
+                </p>
+              </div>
+
+              {/* Or enter URL */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-white dark:bg-gray-900 px-3 text-sm text-gray-500">
+                    or enter URL
+                  </span>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold mb-2">
                   Image URL
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   value={currentImage.url}
                   onChange={(e) =>
                     setCurrentImage({ ...currentImage, url: e.target.value })
                   }
-                  placeholder="https://..."
+                  placeholder="https://example.com/image.jpg"
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
               </div>
@@ -324,10 +392,39 @@ export default function EditProject() {
                 />
               </div>
 
+              {/* Preview */}
+              {currentImage.url && (
+                <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-2">Preview:</p>
+                  <img
+                    src={currentImage.url}
+                    alt="Preview"
+                    className="max-h-32 rounded"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.nextSibling &&
+                        (e.target.nextSibling.style.display = "block");
+                    }}
+                    onLoad={(e) => {
+                      e.target.style.display = "block";
+                      e.target.nextSibling &&
+                        (e.target.nextSibling.style.display = "none");
+                    }}
+                  />
+                  <p
+                    className="text-red-500 text-sm"
+                    style={{ display: "none" }}
+                  >
+                    Failed to load image. Check the URL.
+                  </p>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={handleAddImage}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                disabled={!currentImage.url}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 Add Image
               </button>

@@ -6,9 +6,15 @@ export async function getAllProjects(limit = null) {
     const client = await clientPromise;
     const db = client.db("portfolio");
 
+    // Query for published status (case-insensitive)
     let query = db
       .collection("projects")
-      .find({ status: "published" })
+      .find({ 
+        $or: [
+          { status: "published" },
+          { status: "Published" }
+        ]
+      })
       .sort({ featured: -1, createdAt: -1 });
 
     if (limit) {
@@ -48,7 +54,13 @@ export async function getProjectBySlug(slug) {
 
     const project = await db
       .collection("projects")
-      .findOne({ slug, status: "published" });
+      .findOne({ 
+        slug, 
+        $or: [
+          { status: "published" },
+          { status: "Published" }
+        ]
+      });
 
     if (!project) return null;
 
