@@ -237,9 +237,6 @@ export default function Sidebar() {
           </div>
         </div>
       </aside>
-
-      {/* Spacer for mobile header */}
-      <div className="lg:hidden h-[65px]" />
     </>
   );
 }
