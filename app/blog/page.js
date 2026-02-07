@@ -7,6 +7,7 @@ import { FiCalendar, FiClock, FiEye } from "react-icons/fi";
 export default function BlogPage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchPosts();
@@ -16,20 +17,28 @@ export default function BlogPage() {
     try {
       const response = await fetch("/api/posts");
       const data = await response.json();
-      setPosts(data);
+      // Ensure data is an array
+      setPosts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching posts:", error);
+      setError("Failed to load posts");
+      setPosts([]);
     } finally {
       setLoading(false);
     }
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    try {
+      if (!dateString) return "Unknown date";
+      return new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return "Unknown date";
+    }
   };
 
   if (loading) {
@@ -43,10 +52,28 @@ export default function BlogPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen p-4 sm:p-8 lg:p-16 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+          <button 
+            onClick={fetchPosts}
+            className="mt-4 px-4 py-2 text-sm border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen p-4 sm:p-8 lg:p-16">
       <div className="max-w-4xl w-full">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2">Blog</h1>
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2">
+          Blog
+        </h1>
         <p className="text-gray-600 dark:text-gray-400 mb-12">
           Thoughts, tutorials, and insights
         </p>
