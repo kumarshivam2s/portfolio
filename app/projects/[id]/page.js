@@ -69,7 +69,7 @@ export default function ProjectDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-8 lg:p-16 flex items-center justify-center">
+      <div className="min-h-screen p-4 sm:p-8 lg:p-16 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-gray-300 dark:border-gray-700 border-t-gray-600 dark:border-t-gray-400 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400 text-sm">
@@ -82,8 +82,8 @@ export default function ProjectDetailPage() {
 
   if (error || !project) {
     return (
-      <div className="min-h-screen p-8 lg:p-16">
-        <div className="max-w-4xl">
+      <div className="min-h-screen p-4 sm:p-8 lg:p-16">
+        <div className="max-w-4xl w-full">
           <Link
             href="/projects"
             className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors mb-8"
@@ -103,8 +103,8 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen p-8 lg:p-16">
-      <div className="max-w-4xl">
+    <div className="min-h-screen p-4 sm:p-8 lg:p-16">
+      <div className="max-w-4xl w-full">
         {/* Back Button */}
         <Link
           href="/projects"
@@ -115,9 +115,9 @@ export default function ProjectDetailPage() {
         </Link>
 
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-            <h1 className="text-3xl lg:text-4xl font-bold">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
               {project.title}
               {project.featured && (
                 <span className="ml-3 text-sm bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100 px-3 py-1 rounded align-middle">

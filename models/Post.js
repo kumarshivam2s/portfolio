@@ -8,7 +8,12 @@ export async function getAllPosts(limit = null) {
 
     let query = db
       .collection("posts")
-      .find({ status: "published" })
+      .find({ 
+        $or: [
+          { status: "published" },
+          { status: "Published" }
+        ]
+      })
       .sort({ createdAt: -1 });
 
     if (limit) {

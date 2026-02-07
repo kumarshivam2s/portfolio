@@ -57,7 +57,7 @@ export default function BlogPage() {
       <div className="min-h-screen p-4 sm:p-8 lg:p-16 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-          <button 
+          <button
             onClick={fetchPosts}
             className="mt-4 px-4 py-2 text-sm border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
           >
