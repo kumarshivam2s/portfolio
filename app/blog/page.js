@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FiCalendar, FiClock, FiEye } from "react-icons/fi";
+import FeatureDisabled from "@/components/FeatureDisabled";
 
 export default function BlogPage() {
   const [posts, setPosts] = useState([]);
@@ -71,16 +72,12 @@ export default function BlogPage() {
     );
   }
 
-  if (!enabled) {
+  if (enabled === false) {
     return (
-      <div className="min-h-screen p-4 sm:p-8 lg:p-16 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Blog Disabled</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            The blog is currently disabled by the site administrator.
-          </p>
-        </div>
-      </div>
+      <FeatureDisabled
+        title="Blog Disabled"
+        message="The blog is currently disabled by the site administrator."
+      />
     );
   }
 

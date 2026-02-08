@@ -213,7 +213,7 @@ export default function AdminDashboard() {
           <h2 className="text-2xl font-bold mb-6">Management</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {/* Live Controls - full width on md+ */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-500 transition-colors flex flex-col h-full md:col-span-2 lg:col-span-4">
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-orange-500 focus-within:border-orange-500 transition-colors flex flex-col h-full md:col-span-2 lg:col-span-4">
               <div className="mb-4">
                 <h3 className="text-lg font-semibold">Live Controls</h3>
                 <p className="text-gray-600 dark:text-gray-400 mt-4 text-sm">
@@ -396,6 +396,26 @@ export default function AdminDashboard() {
                   </li>
                 </ul>
               </div>
+
+              <div className="space-y-3">
+                <h3 className="font-semibold text-orange-600 dark:text-orange-400">
+                  Live Controls & Settings
+                </h3>
+                <ul className="space-y-2 text-gray-700 dark:text-gray-300 text-sm">
+                  <li className="flex gap-2">
+                    <span>•</span>
+                    <span>Toggle site features in real-time (Blog, Projects, Resume, Comments)</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span>•</span>
+                    <span>Enable/disable search or maintenance mode instantly</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span>•</span>
+                    <span>Changes broadcast to all open tabs for immediate effect</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -418,12 +438,18 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form
+            onSubmit={handleLogin}
+            action="/api/admin/login"
+            method="post"
+            className="space-y-4"
+          >
             <div>
               <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
                 Email
               </label>
               <input
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -438,6 +464,7 @@ export default function AdminDashboard() {
                 Password
               </label>
               <input
+                name="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

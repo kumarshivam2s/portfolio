@@ -4,6 +4,11 @@ export function middleware(request) {
   const { pathname } = request.nextUrl;
   const method = request.method;
 
+  // Let OPTIONS through immediately (preflight requests)
+  if (method === "OPTIONS") {
+    return NextResponse.next();
+  }
+
   // Always allow public GET requests to /api/posts, /api/comments and /api/settings
   if (
     (pathname.startsWith("/api/posts") && method === "GET") ||

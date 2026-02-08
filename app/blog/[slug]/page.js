@@ -5,17 +5,50 @@ import { useParams } from "next/navigation";
 export const dynamic = "force-dynamic";
 import { FiCalendar, FiClock, FiEye, FiUser } from "react-icons/fi";
 import CommentSection from "@/components/CommentSection";
+import FeatureDisabled from "@/components/FeatureDisabled";
 
 export default function BlogPostPage() {
   const params = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [enabled, setEnabled] = useState(null);
   const postId = params?.slug; // This is actually the _id, not a slug
 
   useEffect(() => {
-    if (postId) {
-      fetchPost();
-    }
+    let mounted = true;
+
+    const doFetch = async () => {
+      try {
+        const res = await fetch("/api/settings");
+        const data = await res.json();
+        const ok = data.showBlog !== false;
+        if (!mounted) return;
+        setEnabled(ok);
+
+        if (ok && postId) {
+          await fetchPost();
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Error fetching settings:", err);
+        if (!mounted) return;
+        setEnabled(true);
+        if (postId) await fetchPost();
+      }
+    };
+
+    doFetch();
+
+    const onStorage = (e) => {
+      if (e.key === "settings_updated_at") doFetch();
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener("storage", onStorage);
+    };
   }, [postId]);
 
   const fetchPost = async () => {
@@ -55,6 +88,15 @@ export default function BlogPostPage() {
           <p className="text-gray-600 dark:text-gray-400 text-sm">Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  if (enabled === false) {
+    return (
+      <FeatureDisabled
+        title="Blog Disabled"
+        message="The blog is currently disabled by the site administrator."
+      />
     );
   }
 

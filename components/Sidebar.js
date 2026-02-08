@@ -39,10 +39,6 @@ export default function Sidebar() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
@@ -76,6 +72,7 @@ export default function Sidebar() {
         </div>
       </div>
 
+
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div
@@ -88,6 +85,15 @@ export default function Sidebar() {
       {isMobileMenuOpen && (
         <div className="lg:hidden fixed top-[65px] left-0 bottom-0 w-72 z-40 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-y-auto">
           <div className="p-6">
+            {/* Mobile Profile (always visible) */}
+            <div className="text-center mb-4 block cursor-pointer">
+              <div className="profile-image w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 ring-2 ring-gray-300 dark:ring-gray-700 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <img src="/profile.jpg" alt="Profile" className="w-full h-full object-cover" />
+              </div>
+              <h2 className="text-lg font-bold mb-1">Kumar Shivam</h2>
+              <p className="text-xs text-gray-600 dark:text-gray-400">kumarshivam.new@gmail.com</p>
+            </div>
+
             <nav className="space-y-1">
               {navigation.map((item) => {
                 const isActive =
@@ -125,10 +131,17 @@ export default function Sidebar() {
                   </a>
                 ))}
               </div>
+
+              {/* Mobile copyright inside hamburger menu */}
+              <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800 text-center text-xs text-gray-500 dark:text-gray-400">
+                © {new Date().getFullYear()} Kumar Shivam. All rights reserved.
+              </div>
             </div>
           </div>
         </div>
       )}
+
+
 
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 h-screen w-96 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800">
