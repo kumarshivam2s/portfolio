@@ -1,20 +1,30 @@
 import { NextResponse } from "next/server";
 
 export function middleware(request) {
-  // Check if it's an admin API route
+  const { pathname } = request.nextUrl;
+  const method = request.method;
+
+  // Always allow public GET requests to /api/posts and /api/comments
   if (
-    request.nextUrl.pathname.startsWith("/api/admin") ||
-    request.nextUrl.pathname.startsWith("/api/posts") ||
-    request.nextUrl.pathname.startsWith("/api/comments")
+    (pathname.startsWith("/api/posts") && method === "GET") ||
+    (pathname.startsWith("/api/comments") &&
+      (method === "GET" || method === "POST"))
   ) {
-    // Allow login endpoint without token
-    if (request.nextUrl.pathname === "/api/admin/login") {
-      return NextResponse.next();
-    }
+    return NextResponse.next();
+  }
 
-    // Check for admin token
+  // Allow login endpoint without token
+  if (pathname === "/api/admin/login") {
+    return NextResponse.next();
+  }
+
+  // For all other /api/admin, /api/posts, /api/comments requests, require admin token
+  if (
+    pathname.startsWith("/api/admin") ||
+    pathname.startsWith("/api/posts") ||
+    pathname.startsWith("/api/comments")
+  ) {
     const token = request.cookies.get("admin_token")?.value;
-
     if (!token) {
       return NextResponse.json(
         { error: "Unauthorized - Admin token required" },
