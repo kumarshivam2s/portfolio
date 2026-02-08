@@ -12,6 +12,7 @@ export default function BlogPostPage() {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(null);
+  const [maintenance, setMaintenance] = useState(false);
   const postId = params?.slug; // This is actually the _id, not a slug
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export default function BlogPostPage() {
         const ok = data.showBlog !== false;
         if (!mounted) return;
         setEnabled(ok);
+        setMaintenance(!!data.maintenanceMode);
 
         if (ok && postId) {
           await fetchPost();
@@ -88,6 +90,16 @@ export default function BlogPostPage() {
           <p className="text-gray-600 dark:text-gray-400 text-sm">Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  // If maintenance mode is enabled, show the maintenance UI
+  if (maintenance) {
+    return (
+      <FeatureDisabled
+        title="Maintenance Mode"
+        message="The site is currently in maintenance mode. Please check back soon."
+      />
     );
   }
 

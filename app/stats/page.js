@@ -95,7 +95,7 @@ export default function StatsPage() {
   ];
 
   const StatCard = ({ label, value }) => (
-    <div className="p-4 border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-md hover:shadow-gray-200/50 dark:hover:shadow-gray-900/50 transition-all duration-300 bg-white dark:bg-transparent">
+    <div className="p-4 border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-none dark:hover:shadow-md dark:hover:shadow-gray-900/50 transition-all duration-300 bg-white dark:bg-transparent">
       <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
         {label}
       </p>

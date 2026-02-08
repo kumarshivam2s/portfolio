@@ -26,8 +26,12 @@ export async function PUT(request) {
     const origin = request.headers.get("origin") || "*";
     const body = await request.json();
     console.log("PUT /api/settings body:", body);
+    const adminEmail = body.adminEmail || null;
+    const updates = { ...body };
+    delete updates.adminEmail;
+
     // Expect an object with keys to update
-    const updated = await updateSettings(body);
+    const updated = await updateSettings(updates, adminEmail);
     if (!updated)
       return NextResponse.json({ error: "Failed to update" }, { status: 500 });
     console.log("Settings updated successfully");

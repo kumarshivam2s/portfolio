@@ -11,6 +11,7 @@ export default function BlogPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [enabled, setEnabled] = useState(true);
+  const [maintenance, setMaintenance] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -28,6 +29,7 @@ export default function BlogPage() {
       const res = await fetch("/api/settings");
       const data = await res.json();
       setEnabled(data.showBlog !== false);
+      setMaintenance(!!data.maintenanceMode);
     } catch (err) {
       console.error("Failed to load settings", err);
     }
@@ -69,6 +71,16 @@ export default function BlogPage() {
           <p className="text-gray-600 dark:text-gray-400 text-sm">Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  // If the site is in maintenance mode, show the maintenance UI
+  if (maintenance) {
+    return (
+      <FeatureDisabled
+        title="Maintenance Mode"
+        message="The site is currently in maintenance mode. Please check back soon."
+      />
     );
   }
 

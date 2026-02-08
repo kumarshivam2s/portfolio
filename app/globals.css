@@ -116,6 +116,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Prevent flashing transition on initial theme hydration. The class is removed on client mount. */
+.disable-theme-transition body,
+.disable-theme-transition * {
+  transition: none !important;
+}
+
+
 h1,
 h2,
 h3,

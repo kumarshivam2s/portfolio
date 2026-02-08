@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
+import { isAdminSessionClient } from "@/lib/admin";
 import {
   FiGithub,
   FiLinkedin,
@@ -38,6 +39,38 @@ export default function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    try {
+      setIsAdminMode(isAdminSessionClient());
+    } catch (e) {
+      setIsAdminMode(false);
+    }
+
+    // Listen for changes to admin session or admin_view flags (in other tabs)
+    const onStorage = (e) => {
+      if (e.key === "admin_login_ts" || e.key === "admin_view") {
+        try {
+          setIsAdminMode(isAdminSessionClient());
+        } catch (err) {
+          setIsAdminMode(false);
+        }
+      }
+    };
+
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      setMounted(false);
+    };
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -48,7 +81,10 @@ export default function Sidebar() {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between p-4">
-          <Link href="/" className="text-2xl font-bold">
+          <Link
+            href={isAdminMode ? "/admin" : "/"}
+            className="text-2xl font-bold"
+          >
             PORTFOLIO
           </Link>
           <div className="flex items-center gap-4">
@@ -72,7 +108,6 @@ export default function Sidebar() {
         </div>
       </div>
 
-
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div
@@ -88,22 +123,39 @@ export default function Sidebar() {
             {/* Mobile Profile (always visible) */}
             <div className="text-center mb-4 block cursor-pointer">
               <div className="profile-image w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 ring-2 ring-gray-300 dark:ring-gray-700 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <img src="/profile.jpg" alt="Profile" className="w-full h-full object-cover" />
+                <img
+                  src="/profile.jpg"
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <h2 className="text-lg font-bold mb-1">Kumar Shivam</h2>
-              <p className="text-xs text-gray-600 dark:text-gray-400">kumarshivam.new@gmail.com</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                kumarshivam.new@gmail.com
+              </p>
             </div>
 
             <nav className="space-y-1">
-              {navigation.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  pathname?.startsWith(item.href + "/");
+                {navigation.map((item) => {
+                const href = item.href;
+                const isActive = pathname === href || pathname?.startsWith(href + "/");
+
+                const handleClick = (e) => {
+                  // set admin_view so the public page knows you arrived via admin
+                  if (isAdminMode) {
+                    try {
+                      sessionStorage.setItem("admin_view", JSON.stringify({ path: href, ts: Date.now() }));
+                    } catch (err) {}
+                  }
+                  // then close mobile menu
+                  try { toggleMobileMenu(); } catch (e) {}
+                };
+
                 return (
                   <Link
                     key={item.name}
-                    href={item.href}
-                    onClick={toggleMobileMenu}
+                    href={href}
+                    onClick={handleClick}
                     className={`block px-3 py-2 rounded text-sm font-medium transition-colors ${
                       isActive
                         ? "bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
@@ -141,13 +193,11 @@ export default function Sidebar() {
         </div>
       )}
 
-
-
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 h-screen w-96 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800">
         <div className="flex flex-col h-full px-6 py-5">
           {/* Profile Section */}
-          <Link href="/" className="text-center mb-4 block cursor-pointer">
+          <Link href="/" onClick={() => { if (isAdminMode) try { sessionStorage.setItem('admin_view', JSON.stringify({ path: '/', ts: Date.now() })); } catch (e) {} }} className="text-center mb-4 block cursor-pointer">
             <div className="profile-image w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 ring-2 ring-gray-300 dark:ring-gray-700 shadow-lg hover:shadow-xl transition-shadow duration-300">
               <img
                 src="/profile.jpg"
@@ -186,13 +236,22 @@ export default function Sidebar() {
           <nav className="mb-4 flex-shrink-0">
             <ul className="space-y-0.5">
               {navigation.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  pathname?.startsWith(item.href + "/");
+                const href = item.href;
+                const isActive = pathname === href || pathname?.startsWith(href + "/");
+
+                const handleClick = () => {
+                  if (isAdminMode) {
+                    try {
+                      sessionStorage.setItem("admin_view", JSON.stringify({ path: href, ts: Date.now() }));
+                    } catch (err) {}
+                  }
+                };
+
                 return (
                   <li key={item.name}>
                     <Link
-                      href={item.href}
+                      href={href}
+                      onClick={handleClick}
                       className={`block px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         isActive
                           ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"

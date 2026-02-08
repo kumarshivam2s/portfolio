@@ -70,10 +70,13 @@ export default function LiveControls() {
     setSaving(true);
     setError("");
     try {
+      const adminEmail = typeof window !== "undefined" ? sessionStorage.getItem("admin_email") : null;
+      const payload = adminEmail ? { ...newSettings, adminEmail } : { ...newSettings };
+
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...newSettings }),
+        body: JSON.stringify(payload),
         credentials: "include",
       });
 
@@ -90,10 +93,11 @@ export default function LiveControls() {
         }
 
         // retry PUT once
+        const retryPayload = adminEmail ? { ...newSettings, adminEmail } : { ...newSettings };
         const retry = await fetch("/api/settings", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...newSettings }),
+          body: JSON.stringify(retryPayload),
           credentials: "include",
         });
         const retryData = await retry.json();
@@ -222,6 +226,12 @@ export default function LiveControls() {
         {saving && <p className="text-xs text-gray-500">Saving...</p>}
         {saved && <p className="text-xs text-green-500">Saved</p>}
         {error && <p className="text-xs text-red-600">{error}</p>}
+
+        {(settings?.lastChangedBy || settings?.updatedAt) && (
+          <p className="text-xs text-gray-500 ml-auto">
+            Last changed by: {settings?.lastChangedBy || "—"}{settings?.updatedAt ? ` • ${new Date(settings.updatedAt).toLocaleString()}` : ""}
+          </p>
+        )}
       </div>
     </div>
   );

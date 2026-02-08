@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import ProfileTeaser from "@/components/ProfileTeaser";
+import SearchBar from "@/components/SearchBar";
+import Testimonials from "@/components/Testimonials";
+import FeatureDisabled from "@/components/FeatureDisabled";
 
 import { useEffect, useState } from "react";
 
@@ -18,7 +21,14 @@ export default function Home() {
       // Use functional state update so we check the *current* state at execution time and do not overwrite newer values
       setSettings((prev) =>
         prev === null
-          ? { showBlog: true, showProjects: true, showResume: false, enableSearch: true, showTestimonials: false, maintenanceMode: false }
+          ? {
+              showBlog: true,
+              showProjects: true,
+              showResume: false,
+              enableSearch: true,
+              showTestimonials: false,
+              maintenanceMode: false,
+            }
           : prev,
       );
     }, 1500);
@@ -41,9 +51,29 @@ export default function Home() {
       setSettings(data);
     } catch (err) {
       console.error("Failed to load settings", err);
-      setSettings({ showBlog: true, showProjects: true });
+      setSettings({
+        showBlog: true,
+        showProjects: true,
+        enableSearch: true,
+        showTestimonials: false,
+        maintenanceMode: false,
+      });
     }
   };
+
+  // If maintenance mode is enabled, show the maintenance message to visitors
+  if (settings && settings.maintenanceMode) {
+    return (
+      <div className="min-h-screen p-8 lg:p-16 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Maintenance Mode</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            The site is currently in maintenance mode. Please check back soon.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const loader = (
     <div className="border border-gray-200 dark:border-gray-800 p-6 hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer">
@@ -117,6 +147,20 @@ export default function Home() {
               </div>
             </Link>
           ) : null}
+
+          {/* Search Bar (shown when enableSearch is on) */}
+          {settings !== null && settings.enableSearch && (
+            <div className="md:col-span-2">
+              <SearchBar />
+            </div>
+          )}
+
+          {/* Testimonials (shown when enabled) */}
+          {settings !== null && settings.showTestimonials && (
+            <div className="md:col-span-2 lg:col-span-2">
+              <Testimonials />
+            </div>
+          )}
         </div>
       </div>
     </div>

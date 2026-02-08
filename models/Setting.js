@@ -21,14 +21,20 @@ export async function getSettings() {
       .collection("settings")
       .findOne({ _id: "site_settings" });
     const values = doc?.values || {};
-    return { ...DEFAULTS, ...values };
+    const updatedAt = doc?.updatedAt || null;
+
+    // grab most recent change log entry to show who last changed settings
+    const lastLog = await db.collection("settings_log").findOne({}, { sort: { updatedAt: -1 } });
+    const lastChangedBy = lastLog?.adminEmail || null;
+
+    return { ...DEFAULTS, ...values, updatedAt, lastChangedBy };
   } catch (error) {
     console.error("Error fetching settings:", error);
     return { ...DEFAULTS };
   }
 }
 
-export async function updateSettings(updates = {}) {
+export async function updateSettings(updates = {}, adminEmail = null) {
   try {
     const client = await clientPromise;
     const db = client.db("portfolio");
@@ -38,9 +44,23 @@ export async function updateSettings(updates = {}) {
       Object.entries(updates).map(([k, v]) => [`values.${k}`, v]),
     );
 
+    // Set updatedAt timestamp and upsert the merged values
+    setObj.updatedAt = new Date();
+
     await db
       .collection("settings")
       .updateOne({ _id: "site_settings" }, { $set: setObj }, { upsert: true });
+
+    // Write a change log entry for diagnostics / history (include admin email when available)
+    try {
+      await db.collection("settings_log").insertOne({
+        updates,
+        updatedAt: setObj.updatedAt,
+        adminEmail: adminEmail || null,
+      });
+    } catch (logErr) {
+      console.error("Failed to write settings log:", logErr);
+    }
 
     return await getSettings();
   } catch (error) {

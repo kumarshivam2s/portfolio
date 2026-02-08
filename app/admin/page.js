@@ -3,13 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import LiveControls from "@/components/LiveControls";
+import AdminLinkProxy from "@/components/AdminLinkProxy";
 
 export default function AdminDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [maintenance, setMaintenance] = useState(false);
   const [stats, setStats] = useState({
     totalPosts: 0,
     totalProjects: 0,
@@ -20,8 +23,27 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
+    setMounted(true);
     checkSession();
+
+    const onStorage = (e) => {
+      if (e.key === "settings_updated_at") fetchSettingsAdmin();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
+
+  const fetchSettingsAdmin = async () => {
+    try {
+      const res = await fetch("/api/settings");
+      if (res.ok) {
+        const data = await res.json();
+        setMaintenance(!!data.maintenanceMode);
+      }
+    } catch (err) {
+      console.error("Failed to load settings", err);
+    }
+  };
 
   const checkSession = async () => {
     try {
@@ -30,13 +52,14 @@ export default function AdminDashboard() {
       });
       if (response.ok) {
         // Only consider session valid if client-side session timestamp exists and is not expired
-        const ts = sessionStorage.getItem("admin_login_ts");
-        const now = Date.now();
-        if (ts && now - Number(ts) < 1000 * 60 * 60) {
+        const ts = getAdminLoginTs();
+        if (ts && Date.now() - ts < 1000 * 60 * 60) {
           setIsLoggedIn(true);
           fetchStats();
+          // fetch settings for admin UI (maintenance badge, etc.)
+          fetchSettingsAdmin();
           // start auto-logout timer for remaining time
-          startAutoLogoutTimer(Number(ts));
+          startAutoLogoutTimer(ts);
         } else {
           setIsLoggedIn(false);
         }
@@ -122,11 +145,14 @@ export default function AdminDashboard() {
         const ts = Date.now();
         // store login timestamp in sessionStorage so it clears when tab closes
         sessionStorage.setItem("admin_login_ts", String(ts));
+        // remember email for audit logging
+        try { sessionStorage.setItem("admin_email", email); } catch (e) {}
         startAutoLogoutTimer(ts);
         setIsLoggedIn(true);
         setEmail("");
         setPassword("");
         fetchStats();
+        fetchSettingsAdmin();
       } else {
         const data = await response.json();
         setError(data.error || "Invalid email or password");
@@ -153,13 +179,14 @@ export default function AdminDashboard() {
     setEmail("");
     setPassword("");
     sessionStorage.removeItem("admin_login_ts");
+    sessionStorage.removeItem("admin_email");
     if (window.__adminLogoutTimer) {
       clearTimeout(window.__adminLogoutTimer);
       window.__adminLogoutTimer = null;
     }
   };
 
-  if (isLoggedIn) {
+  if (isLoggedIn && mounted) {
     return (
       <div className="min-h-screen p-8 lg:p-16 bg-gray-50 dark:bg-gray-950">
         <div className="max-w-7xl">
@@ -171,13 +198,33 @@ export default function AdminDashboard() {
                 Manage your portfolio content
               </p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
-            >
-              Logout
-            </button>
+            <div className="flex items-center gap-3">
+              {maintenance && (
+                <span className="inline-flex items-center px-3 py-1 bg-red-600 text-white rounded text-sm font-medium">
+                  Maintenance ON
+                </span>
+              )}
+
+              <a
+                href="/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-2 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              >
+                Public Site
+              </a>
+
+              <button
+                onClick={handleLogout}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
+              >
+                Logout
+              </button>
+            </div>
           </div>
+
+          {/* Admin link-proxy helper: rewrites site links to open under /admin/... when logged in */}
+          <AdminLinkProxy />
 
           {/* Analytics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
@@ -293,6 +340,34 @@ export default function AdminDashboard() {
                 className="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
               >
                 View Comments
+              </Link>
+            </div>
+
+            {/* Testimonials */}
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-pink-500 transition-colors self-start">
+              <h3 className="text-lg font-semibold mb-3">Testimonials</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+                Add, edit, or remove testimonials shown on the public site
+              </p>
+              <Link
+                href="/admin/testimonials"
+                className="inline-block px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors text-sm font-medium"
+              >
+                Manage Testimonials
+              </Link>
+            </div>
+
+            {/* Diagnostics */}
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-yellow-500 transition-colors self-start">
+              <h3 className="text-lg font-semibold mb-3">Diagnostics</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+                View raw settings document and recent change logs.
+              </p>
+              <Link
+                href="/admin/diagnostics"
+                className="inline-block px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
+              >
+                Diagnostics
               </Link>
             </div>
           </div>
