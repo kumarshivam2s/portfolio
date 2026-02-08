@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+export const dynamic = "force-dynamic";
 import { FiCalendar, FiClock, FiEye, FiUser } from "react-icons/fi";
 import CommentSection from "@/components/CommentSection";
 

@@ -66,6 +66,7 @@ export default function ProjectDetailPage() {
       day: "numeric",
     });
   };
+  export const dynamic = "force-dynamic";
 
   if (loading) {
     return (

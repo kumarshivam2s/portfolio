@@ -1,5 +1,9 @@
 "use client";
 
+"use client";
+
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { FiUsers, FiFileText, FiMessageSquare, FiEye } from "react-icons/fi";
 
