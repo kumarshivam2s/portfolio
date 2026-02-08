@@ -45,8 +45,9 @@ export default function AboutPage() {
               <li className="flex gap-3">
                 <span className="text-blue-600 dark:text-blue-400">•</span>
                 <span>
-                  I first sent email to my dad and it was "Hi Papa" (Not Hello
-                  World).
+                   My journey into tech began with a simple “Hello World,” 
+                   after I couldn’t clear the NEET exam during COVID. What 
+                   felt like a setback became the turning point of my career.
                 </span>
               </li>
               <li className="flex gap-3">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   FiMail,
   FiPhone,
@@ -11,6 +12,40 @@ import {
 } from "react-icons/fi";
 
 export default function ContactPage() {
+  const [enabled, setEnabled] = useState(true);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch("/api/settings");
+        const data = await res.json();
+        setEnabled(data.showContact !== false);
+      } catch (err) {
+        console.error("Failed to load settings for contact", err);
+      }
+    };
+    fetchSettings();
+
+    const onStorage = (e) => {
+      if (e.key === "settings_updated_at") fetchSettings();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  if (!enabled) {
+    return (
+      <div className="min-h-screen p-4 sm:p-8 lg:p-16 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Contact Disabled</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            The contact page is currently disabled by the site administrator.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const contactInfo = [
     {
       icon: FiMail,
@@ -65,11 +100,10 @@ export default function ContactPage() {
       <div className="max-w-2xl">
         <h1 className="text-4xl lg:text-5xl font-bold mb-2">Contact</h1>
         <p className="text-gray-600 dark:text-gray-400 mb-12">
-          I respond faster to ideas than to spam. 
+          I respond faster to ideas than to spam.
           <br />
           Reach out if you want to connect, collaborate, or just say hi.
         </p>
-        
 
         {/* Contact Information */}
         <div>

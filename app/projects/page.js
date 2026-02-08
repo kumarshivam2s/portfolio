@@ -14,10 +14,28 @@ import {
 export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [enabled, setEnabled] = useState(true);
 
   useEffect(() => {
+    fetchSettings();
     fetchProjects();
+
+    const onStorage = (e) => {
+      if (e.key === "settings_updated_at") fetchSettings();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch("/api/settings");
+      const data = await res.json();
+      setEnabled(data.showProjects !== false);
+    } catch (err) {
+      console.error("Failed to load settings", err);
+    }
+  };
 
   const fetchProjects = async () => {
     try {
@@ -56,6 +74,20 @@ export default function ProjectsPage() {
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-gray-300 dark:border-gray-700 border-t-gray-600 dark:border-t-gray-400 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400 text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!enabled) {
+    return (
+      <div className="min-h-screen p-8 lg:p-16 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Projects Disabled</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            The projects section is currently disabled by the site
+            administrator.
+          </p>
         </div>
       </div>
     );

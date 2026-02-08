@@ -14,6 +14,7 @@ import {
   FiLink,
   FiCalendar,
 } from "react-icons/fi";
+import ScreenshotCarousel from "@/components/ScreenshotCarousel";
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -159,27 +160,8 @@ export default function ProjectDetailPage() {
             <h2 className="text-xl font-semibold mb-4">
               Screenshots & References
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {project.images.map((image, index) => (
-                <div
-                  key={index}
-                  className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800"
-                >
-                  <img
-                    src={image.url || image}
-                    alt={
-                      image.caption ||
-                      `${project.title} screenshot ${index + 1}`
-                    }
-                    className="w-full h-auto object-cover"
-                  />
-                  {image.caption && (
-                    <p className="text-sm text-gray-500 dark:text-gray-500 p-3 bg-gray-50 dark:bg-gray-900">
-                      {image.caption}
-                    </p>
-                  )}
-                </div>
-              ))}
+            <div>
+              <ScreenshotCarousel images={project.images} />
             </div>
           </div>
         )}

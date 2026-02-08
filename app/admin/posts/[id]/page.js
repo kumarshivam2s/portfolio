@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { generateSlug } from "@/lib/utils";
 
 // Dynamically import Quill editor to avoid SSR issues

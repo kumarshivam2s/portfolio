@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import LiveControls from "@/components/LiveControls";
 
 export default function AdminDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -28,8 +29,17 @@ export default function AdminDashboard() {
         credentials: "include",
       });
       if (response.ok) {
-        setIsLoggedIn(true);
-        fetchStats();
+        // Only consider session valid if client-side session timestamp exists and is not expired
+        const ts = sessionStorage.getItem("admin_login_ts");
+        const now = Date.now();
+        if (ts && now - Number(ts) < 1000 * 60 * 60) {
+          setIsLoggedIn(true);
+          fetchStats();
+          // start auto-logout timer for remaining time
+          startAutoLogoutTimer(Number(ts));
+        } else {
+          setIsLoggedIn(false);
+        }
       } else if (response.status === 401) {
         setIsLoggedIn(false);
       }
@@ -72,6 +82,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const startAutoLogoutTimer = (loginTs) => {
+    if (typeof window !== "undefined") {
+      if (window.__adminLogoutTimer) clearTimeout(window.__adminLogoutTimer);
+      const now = Date.now();
+      const elapsed = now - loginTs;
+      const remaining = Math.max(0, 1000 * 60 * 60 - elapsed);
+      window.__adminLogoutTimer = setTimeout(async () => {
+        // Call server logout and clear client state
+        try {
+          await fetch("/api/admin/logout", {
+            method: "POST",
+            credentials: "include",
+          });
+        } catch (err) {
+          console.error("Error during auto logout:", err);
+        }
+        sessionStorage.removeItem("admin_login_ts");
+        setIsLoggedIn(false);
+        alert("Session expired. Please log in again.");
+      }, remaining);
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -86,6 +119,10 @@ export default function AdminDashboard() {
       });
 
       if (response.ok) {
+        const ts = Date.now();
+        // store login timestamp in sessionStorage so it clears when tab closes
+        sessionStorage.setItem("admin_login_ts", String(ts));
+        startAutoLogoutTimer(ts);
         setIsLoggedIn(true);
         setEmail("");
         setPassword("");
@@ -103,11 +140,23 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+
     setIsLoggedIn(false);
     setEmail("");
     setPassword("");
-    document.cookie =
-      "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    sessionStorage.removeItem("admin_login_ts");
+    if (window.__adminLogoutTimer) {
+      clearTimeout(window.__adminLogoutTimer);
+      window.__adminLogoutTimer = null;
+    }
   };
 
   if (isLoggedIn) {
@@ -163,8 +212,22 @@ export default function AdminDashboard() {
           {/* Admin Sections */}
           <h2 className="text-2xl font-bold mb-6">Management</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {/* Live Controls - full width on md+ */}
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-500 transition-colors flex flex-col h-full md:col-span-2 lg:col-span-4">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold">Live Controls</h3>
+                <p className="text-gray-600 dark:text-gray-400 mt-4 text-sm">
+                  Toggle site features visible to visitors.
+                </p>
+              </div>
+
+              <div className="flex-1 mt-2">
+                <LiveControls />
+              </div>
+            </div>
+
             {/* Create Post */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-500 transition-colors">
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-500 transition-colors self-start">
               <h3 className="text-lg font-semibold mb-3">Create Post</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
                 Write and publish new blog posts with rich text editor
@@ -178,10 +241,10 @@ export default function AdminDashboard() {
             </div>
 
             {/* Manage Posts */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-500 transition-colors">
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-500 transition-colors self-start">
               <h3 className="text-lg font-semibold mb-3">Manage Posts</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                Edit, delete, or publish existing posts
+                Edit, feature, or delete posts
               </p>
               <Link
                 href="/admin/posts"
@@ -192,7 +255,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Create Project */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-green-500 transition-colors">
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-green-500 transition-colors self-start">
               <h3 className="text-lg font-semibold mb-3">Create Project</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
                 Add new projects with images and links
@@ -206,7 +269,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Manage Projects */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-green-500 transition-colors">
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-green-500 transition-colors self-start">
               <h3 className="text-lg font-semibold mb-3">Manage Projects</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
                 Edit, delete, or feature projects
@@ -220,7 +283,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Comments */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-purple-500 transition-colors">
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-purple-500 transition-colors self-start">
               <h3 className="text-lg font-semibold mb-3">Moderate Comments</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
                 Review, approve, or reject user comments

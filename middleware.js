@@ -4,11 +4,12 @@ export function middleware(request) {
   const { pathname } = request.nextUrl;
   const method = request.method;
 
-  // Always allow public GET requests to /api/posts and /api/comments
+  // Always allow public GET requests to /api/posts, /api/comments and /api/settings
   if (
     (pathname.startsWith("/api/posts") && method === "GET") ||
     (pathname.startsWith("/api/comments") &&
-      (method === "GET" || method === "POST"))
+      (method === "GET" || method === "POST")) ||
+    (pathname.startsWith("/api/settings") && method === "GET")
   ) {
     return NextResponse.next();
   }

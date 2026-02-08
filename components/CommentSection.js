@@ -14,10 +14,25 @@ export default function CommentSection({ postId }) {
   const [submitting, setSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
 
+  const [commentsEnabled, setCommentsEnabled] = useState(true);
+
   useEffect(() => {
     if (postId) {
       fetchComments();
     }
+
+    // fetch settings
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch("/api/settings");
+        const data = await res.json();
+        setCommentsEnabled(data.allowComments !== false);
+      } catch (err) {
+        console.error("Failed to load settings for comments", err);
+      }
+    };
+
+    fetchSettings();
   }, [postId]);
 
   const fetchComments = async () => {
@@ -119,55 +134,61 @@ export default function CommentSection({ postId }) {
 
       <div className="mb-8 p-6 border border-gray-300 dark:border-gray-700 rounded-lg">
         <h4 className="font-bold mb-4">Leave a Comment</h4>
-        <form onSubmit={handleSubmitComment} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              name="name"
-              placeholder="Your Name"
-              value={newComment.name}
+        {!commentsEnabled ? (
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Comments are currently disabled by the site administrator.
+          </p>
+        ) : (
+          <form onSubmit={handleSubmitComment} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                name="name"
+                placeholder="Your Name"
+                value={newComment.name}
+                onChange={handleCommentChange}
+                required
+                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
+              <input
+                type="email"
+                name="email"
+                placeholder="Your Email"
+                value={newComment.email}
+                onChange={handleCommentChange}
+                required
+                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
+            </div>
+            <textarea
+              name="content"
+              placeholder="Your comment..."
+              value={newComment.content}
               onChange={handleCommentChange}
               required
-              className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none"
             />
-            <input
-              type="email"
-              name="email"
-              placeholder="Your Email"
-              value={newComment.email}
-              onChange={handleCommentChange}
-              required
-              className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
-            />
-          </div>
-          <textarea
-            name="content"
-            placeholder="Your comment..."
-            value={newComment.content}
-            onChange={handleCommentChange}
-            required
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none"
-          />
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-semibold text-sm"
-            >
-              {submitting ? "Posting..." : "Post Comment"}
-            </button>
-            {replyingTo && (
+            <div className="flex gap-2">
               <button
-                type="button"
-                onClick={() => setReplyingTo(null)}
-                className="px-6 py-2 bg-gray-300 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors text-sm"
+                type="submit"
+                disabled={submitting}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-semibold text-sm"
               >
-                Cancel Reply
+                {submitting ? "Posting..." : "Post Comment"}
               </button>
-            )}
-          </div>
-        </form>
+              {replyingTo && (
+                <button
+                  type="button"
+                  onClick={() => setReplyingTo(null)}
+                  className="px-6 py-2 bg-gray-300 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors text-sm"
+                >
+                  Cancel Reply
+                </button>
+              )}
+            </div>
+          </form>
+        )}
       </div>
 
       {loading ? (
