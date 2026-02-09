@@ -16,14 +16,17 @@ export async function OPTIONS() {
 
 export async function PUT(request, { params }) {
   try {
-    const token = request.cookies.get("admin_token")?.value;
-    if (!token) {
+    const cookieToken = request.cookies.get("admin_token")?.value;
+    const headerToken = request.headers.get("x-admin-token");
+    const token = headerToken || cookieToken;
+    const { isValidAdminToken } = await import("@/lib/adminSessions");
+    const ok = await isValidAdminToken(token);
+    if (!ok) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const id = params.id;
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-
     const body = await request.json();
     const { name, quote, active } = body;
 
@@ -35,20 +38,31 @@ export async function PUT(request, { params }) {
     if (name) update["name"] = name;
     if (quote) update["quote"] = quote;
 
-    await db.collection("testimonials").updateOne({ _id: new ObjectId(id) }, { $set: update });
-    const updated = await db.collection("testimonials").findOne({ _id: new ObjectId(id) });
+    await db
+      .collection("testimonials")
+      .updateOne({ _id: new ObjectId(id) }, { $set: update });
+    const updated = await db
+      .collection("testimonials")
+      .findOne({ _id: new ObjectId(id) });
 
     return NextResponse.json({ testimonial: updated });
   } catch (error) {
     console.error("Error in PUT /api/testimonials/[id]:", error);
-    return NextResponse.json({ error: "Failed to update testimonial" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update testimonial" },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(request, { params }) {
   try {
-    const token = request.cookies.get("admin_token")?.value;
-    if (!token) {
+    const cookieToken = request.cookies.get("admin_token")?.value;
+    const headerToken = request.headers.get("x-admin-token");
+    const token = headerToken || cookieToken;
+    const { isValidAdminToken } = await import("@/lib/adminSessions");
+    const ok = await isValidAdminToken(token);
+    if (!ok) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -63,6 +77,9 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Error in DELETE /api/testimonials/[id]:", error);
-    return NextResponse.json({ error: "Failed to delete testimonial" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete testimonial" },
+      { status: 500 },
+    );
   }
 }

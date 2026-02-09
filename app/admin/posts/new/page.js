@@ -45,11 +45,10 @@ export default function NewPost() {
     setLoading(true);
 
     try {
+      const { getAdminHeaders } = await import("@/lib/admin");
       const response = await fetch("/api/posts", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { ...getAdminHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
           slug: slug || generateSlug(title),
@@ -64,7 +63,6 @@ export default function NewPost() {
           status,
           scheduledPublishDate: scheduledDate ? new Date(scheduledDate) : null,
         }),
-        credentials: "include",
       });
 
       if (response.ok) {

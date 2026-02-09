@@ -38,8 +38,12 @@ export async function OPTIONS() {
 
 export async function POST(request) {
   try {
-    const token = request.cookies.get("admin_token")?.value;
-    if (!token) {
+    const cookieToken = request.cookies.get("admin_token")?.value;
+    const headerToken = request.headers.get("x-admin-token");
+    const token = headerToken || cookieToken;
+    const { isValidAdminToken } = await import("@/lib/adminSessions");
+    const ok = await isValidAdminToken(token);
+    if (!ok) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

@@ -22,9 +22,13 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     const { slug } = params;
-    const adminToken = request.cookies.get("admin_token")?.value;
+    const cookieToken = request.cookies.get("admin_token")?.value;
+    const headerToken = request.headers.get("x-admin-token");
+    const token = headerToken || cookieToken;
 
-    if (!adminToken) {
+    const { isValidAdminToken } = await import("@/lib/adminSessions");
+    const ok = await isValidAdminToken(token);
+    if (!ok) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -43,9 +47,13 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const { slug } = params;
-    const adminToken = request.cookies.get("admin_token")?.value;
+    const cookieToken = request.cookies.get("admin_token")?.value;
+    const headerToken = request.headers.get("x-admin-token");
+    const token = headerToken || cookieToken;
 
-    if (!adminToken) {
+    const { isValidAdminToken } = await import("@/lib/adminSessions");
+    const ok = await isValidAdminToken(token);
+    if (!ok) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

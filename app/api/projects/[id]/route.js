@@ -7,10 +7,27 @@ import {
 } from "@/models/Project";
 import { cookies } from "next/headers";
 
-async function isAdmin() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("admin_token");
-  return token?.value === "authenticated";
+async function isAdmin(request) {
+  // accept per-tab token through header or cookie
+  try {
+    const headerToken = request?.headers?.get?.("x-admin-token");
+    if (headerToken) {
+      const { isValidAdminToken } = await import("@/lib/adminSessions");
+      return await isValidAdminToken(headerToken);
+    }
+  } catch (e) {}
+
+  // Fallback to cookie (legacy)
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("admin_token");
+    if (token?.value) {
+      const { isValidAdminToken } = await import("@/lib/adminSessions");
+      return await isValidAdminToken(token.value);
+    }
+  } catch (e) {}
+
+  return false;
 }
 
 export async function GET(request, { params }) {

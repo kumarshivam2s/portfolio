@@ -18,8 +18,9 @@ export default function ManagePosts() {
 
   const fetchPosts = async () => {
     try {
+      const { getAdminHeaders } = await import("@/lib/admin");
       const response = await fetch("/api/posts", {
-        credentials: "include",
+        headers: getAdminHeaders(),
       });
 
       if (response.status === 401) {
@@ -45,9 +46,10 @@ export default function ManagePosts() {
     if (!confirm("Are you sure you want to delete this post?")) return;
 
     try {
+      const { getAdminHeaders } = await import("@/lib/admin");
       const response = await fetch(`/api/posts/${id}`, {
         method: "DELETE",
-        credentials: "include",
+        headers: getAdminHeaders(),
       });
 
       if (response.ok) {
@@ -65,11 +67,11 @@ export default function ManagePosts() {
   const handleTogglePublish = async (id, currentStatus) => {
     try {
       const newStatus = currentStatus === "published" ? "draft" : "published";
+      const { getAdminHeaders } = await import("@/lib/admin");
       const response = await fetch(`/api/posts/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...getAdminHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
-        credentials: "include",
       });
 
       if (response.ok) {

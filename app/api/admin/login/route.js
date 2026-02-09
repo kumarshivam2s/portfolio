@@ -23,7 +23,10 @@ export async function POST(request) {
         email = body.email;
         password = body.password;
       } catch (e) {
-        return NextResponse.json({ error: "Unsupported content type" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Unsupported content type" },
+          { status: 400 },
+        );
       }
     }
 
@@ -48,37 +51,37 @@ export async function POST(request) {
     }
 
     if (email === adminEmail && password === adminPassword) {
-      // If the client expects HTML (regular form submit), redirect to /admin
-      const accept = request.headers.get("accept") || "";
+      // create a per-tab admin session token stored server-side
+      const { createAdminSession } = await import("@/lib/adminSessions");
+      const session = await createAdminSession(adminEmail);
+      if (!session) {
+        return NextResponse.json(
+          { error: "Failed to create session" },
+          { status: 500 },
+        );
+      }
 
+      const token = session.token;
+
+      // If the client expects HTML (regular form submit), return a small HTML page
+      // that sets the token into sessionStorage and redirects to /admin
+      const accept = request.headers.get("accept") || "";
       const isHtml = accept.includes("text/html");
 
       if (isHtml) {
-        const res = NextResponse.redirect(new URL("/admin", request.url));
-        res.cookies.set("admin_token", "authenticated", {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
-          maxAge: 60 * 60 * 24 * 7,
+        const html = `<!doctype html><html><head><meta charset="utf-8"></head><body><script>try{sessionStorage.setItem('admin_token','${token}');sessionStorage.setItem('admin_login_ts',String(Date.now()));}catch(e){}window.location.href='/admin';</script></body></html>`;
+        return new NextResponse(html, {
+          headers: { "Content-Type": "text/html; charset=utf-8" },
         });
-        return res;
       }
 
-      const response = NextResponse.json({
+      // JSON response for XHR/fetch clients — client should save token in sessionStorage
+      return NextResponse.json({
         success: true,
         message: "Login successful",
         admin: true,
+        admin_token: token,
       });
-
-      // Set a secure admin cookie
-      response.cookies.set("admin_token", "authenticated", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
-
-      return response;
     }
 
     console.log("Invalid credentials");

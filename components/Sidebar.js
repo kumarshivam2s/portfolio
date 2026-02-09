@@ -51,8 +51,20 @@ export default function Sidebar() {
 
     // Listen for changes to admin session or admin_view flags (in other tabs)
     const onStorage = (e) => {
-      if (e.key === "admin_login_ts" || e.key === "admin_view") {
+      if (
+        e.key === "admin_login_ts" ||
+        e.key === "admin_view" ||
+        e.key === "admin_logged_out"
+      ) {
         try {
+          // If another tab logged out, clear any tab-local admin state
+          if (e.key === "admin_logged_out") {
+            try {
+              sessionStorage.removeItem("admin_view");
+              sessionStorage.removeItem("admin_token");
+              sessionStorage.removeItem("admin_login_ts");
+            } catch (err) {}
+          }
           setIsAdminMode(isAdminSessionClient());
         } catch (err) {
           setIsAdminMode(false);
@@ -136,19 +148,25 @@ export default function Sidebar() {
             </div>
 
             <nav className="space-y-1">
-                {navigation.map((item) => {
+              {navigation.map((item) => {
                 const href = item.href;
-                const isActive = pathname === href || pathname?.startsWith(href + "/");
+                const isActive =
+                  pathname === href || pathname?.startsWith(href + "/");
 
                 const handleClick = (e) => {
                   // set admin_view so the public page knows you arrived via admin
                   if (isAdminMode) {
                     try {
-                      sessionStorage.setItem("admin_view", JSON.stringify({ path: href, ts: Date.now() }));
+                      sessionStorage.setItem(
+                        "admin_view",
+                        JSON.stringify({ path: href, ts: Date.now() }),
+                      );
                     } catch (err) {}
                   }
                   // then close mobile menu
-                  try { toggleMobileMenu(); } catch (e) {}
+                  try {
+                    toggleMobileMenu();
+                  } catch (e) {}
                 };
 
                 return (
@@ -197,7 +215,19 @@ export default function Sidebar() {
       <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 h-screen w-96 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800">
         <div className="flex flex-col h-full px-6 py-5">
           {/* Profile Section */}
-          <Link href="/" onClick={() => { if (isAdminMode) try { sessionStorage.setItem('admin_view', JSON.stringify({ path: '/', ts: Date.now() })); } catch (e) {} }} className="text-center mb-4 block cursor-pointer">
+          <Link
+            href="/"
+            onClick={() => {
+              if (isAdminMode)
+                try {
+                  sessionStorage.setItem(
+                    "admin_view",
+                    JSON.stringify({ path: "/", ts: Date.now() }),
+                  );
+                } catch (e) {}
+            }}
+            className="text-center mb-4 block cursor-pointer"
+          >
             <div className="profile-image w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 ring-2 ring-gray-300 dark:ring-gray-700 shadow-lg hover:shadow-xl transition-shadow duration-300">
               <img
                 src="/profile.jpg"
@@ -237,12 +267,16 @@ export default function Sidebar() {
             <ul className="space-y-0.5">
               {navigation.map((item) => {
                 const href = item.href;
-                const isActive = pathname === href || pathname?.startsWith(href + "/");
+                const isActive =
+                  pathname === href || pathname?.startsWith(href + "/");
 
                 const handleClick = () => {
                   if (isAdminMode) {
                     try {
-                      sessionStorage.setItem("admin_view", JSON.stringify({ path: href, ts: Date.now() }));
+                      sessionStorage.setItem(
+                        "admin_view",
+                        JSON.stringify({ path: href, ts: Date.now() }),
+                      );
                     } catch (err) {}
                   }
                 };

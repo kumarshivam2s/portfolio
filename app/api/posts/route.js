@@ -4,10 +4,18 @@ import clientPromise from "@/lib/mongodb";
 
 export async function GET(request) {
   try {
-    const adminToken = request.cookies.get("admin_token")?.value;
+    const cookieToken = request.cookies.get("admin_token")?.value;
+    const headerToken = request.headers.get("x-admin-token");
+    const token = headerToken || cookieToken;
 
-    // If admin is logged in, return all posts (including unpublished)
-    if (adminToken) {
+    let isAdmin = false;
+    if (token) {
+      const { isValidAdminToken } = await import("@/lib/adminSessions");
+      isAdmin = await isValidAdminToken(token);
+    }
+
+    // If admin is logged in (via header token), return all posts (including unpublished)
+    if (isAdmin) {
       const client = await clientPromise;
       const db = client.db("portfolio");
       const posts = await db
@@ -32,10 +40,14 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    // Check for admin token in cookies
-    const adminToken = request.cookies.get("admin_token")?.value;
+    // Accept token from header (per-tab sessions) or cookie
+    const cookieToken = request.cookies.get("admin_token")?.value;
+    const headerToken = request.headers.get("x-admin-token");
+    const token = headerToken || cookieToken;
 
-    if (!adminToken) {
+    const { isValidAdminToken } = await import("@/lib/adminSessions");
+    const ok = await isValidAdminToken(token);
+    if (!ok) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

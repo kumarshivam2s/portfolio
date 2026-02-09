@@ -20,8 +20,12 @@ export async function GET(request) {
       return NextResponse.json(comments);
     } else {
       // Admin endpoint - get all comments
-      const adminToken = request.cookies.get("admin_token")?.value;
-      if (!adminToken) {
+      const cookieToken = request.cookies.get("admin_token")?.value;
+      const headerToken = request.headers.get("x-admin-token");
+      const token = headerToken || cookieToken;
+      const { isValidAdminToken } = await import("@/lib/adminSessions");
+      const ok = await isValidAdminToken(token);
+      if (!ok) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 

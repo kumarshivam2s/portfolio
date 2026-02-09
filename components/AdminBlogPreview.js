@@ -1,12 +1,10 @@
 "use client";
-export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FiCalendar, FiClock, FiEye } from "react-icons/fi";
-import FeatureDisabled from "@/components/FeatureDisabled";
 
-export default function BlogPage() {
+export default function AdminBlogPreview() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,47 +12,46 @@ export default function BlogPage() {
   const [maintenance, setMaintenance] = useState(false);
 
   useEffect(() => {
-    fetchSettings();
-    fetchPosts();
+    let mounted = true;
+    (async () => {
+      try {
+        const { getAdminHeaders } = await import("@/lib/admin");
+        const headers = getAdminHeaders();
 
-    const onStorage = (e) => {
-      if (e.key === "settings_updated_at") fetchSettings();
-      if (e.key === "admin_logged_out") {
-        // When admin logs out in another tab, re-fetch posts so public view is correct
-        fetchPosts();
+        // fetch settings (may show maintenance/feature toggle)
+        try {
+          const sres = await fetch("/api/settings", { headers });
+          if (sres.ok) {
+            const sdata = await sres.json();
+            if (!mounted) return;
+            setEnabled(sdata.showBlog !== false);
+            setMaintenance(!!sdata.maintenanceMode);
+          }
+        } catch (err) {
+          console.error("Failed to fetch settings in admin preview", err);
+        }
+
+        // fetch posts using admin headers so unpublished posts are returned
+        const res = await fetch("/api/posts", { headers });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`Failed to load posts: ${res.status} ${txt}`);
+        }
+        const data = await res.json();
+        if (!mounted) return;
+        setPosts(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Error fetching posts in admin preview:", err);
+        if (!mounted) return;
+        setError("Failed to load posts");
+        setPosts([]);
+      } finally {
+        if (mounted) setLoading(false);
       }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    })();
+
+    return () => (mounted = false);
   }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const res = await fetch("/api/settings");
-      const data = await res.json();
-      setEnabled(data.showBlog !== false);
-      setMaintenance(!!data.maintenanceMode);
-    } catch (err) {
-      console.error("Failed to load settings", err);
-    }
-  };
-
-  const fetchPosts = async () => {
-    try {
-      const { getAdminHeaders } = await import("@/lib/admin");
-      const headers = getAdminHeaders();
-      const response = await fetch("/api/posts", { headers });
-      const data = await response.json();
-      // Ensure data is an array
-      setPosts(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-      setError("Failed to load posts");
-      setPosts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formatDate = (dateString) => {
     try {
@@ -74,28 +71,37 @@ export default function BlogPage() {
       <div className="min-h-screen p-4 sm:p-8 lg:p-16 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-gray-300 dark:border-gray-700 border-t-gray-600 dark:border-t-gray-400 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            Loading admin preview…
+          </p>
         </div>
       </div>
     );
   }
 
-  // If the site is in maintenance mode, show the maintenance UI
   if (maintenance) {
     return (
-      <FeatureDisabled
-        title="Maintenance Mode"
-        message="The site is currently in maintenance mode. Please check back soon."
-      />
+      <div className="min-h-screen p-4 sm:p-8 lg:p-16 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Maintenance Mode</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            The site is in maintenance mode.
+          </p>
+        </div>
+      </div>
     );
   }
 
   if (enabled === false) {
     return (
-      <FeatureDisabled
-        title="Blog Disabled"
-        message="The blog is currently disabled by the site administrator."
-      />
+      <div className="min-h-screen p-4 sm:p-8 lg:p-16 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Blog Disabled</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            The blog is currently disabled by the administrator.
+          </p>
+        </div>
+      </div>
     );
   }
 
@@ -104,12 +110,6 @@ export default function BlogPage() {
       <div className="min-h-screen p-4 sm:p-8 lg:p-16 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-          <button
-            onClick={fetchPosts}
-            className="mt-4 px-4 py-2 text-sm border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            Try Again
-          </button>
         </div>
       </div>
     );
@@ -119,10 +119,10 @@ export default function BlogPage() {
     <div className="min-h-screen p-4 sm:p-8 lg:p-16">
       <div className="max-w-4xl w-full">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2">
-          Blog
+          Blog (Admin Preview)
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mb-12">
-          Thoughts, tutorials, and insights
+          Previewing the blog with admin access
         </p>
 
         {posts.length === 0 ? (
@@ -136,7 +136,7 @@ export default function BlogPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            {posts.map((post, index) => (
+            {posts.map((post) => (
               <article key={post._id} className="group">
                 <Link href={`/blog/${post._id}`}>
                   <div className="p-6 border border-gray-200 dark:border-gray-800 rounded hover:border-gray-400 dark:hover:border-gray-600 transition-all">

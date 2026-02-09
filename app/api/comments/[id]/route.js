@@ -7,8 +7,12 @@ import {
 } from "@/models/Comment";
 
 async function isAdmin(request) {
-  const adminToken = request.cookies.get("admin_token")?.value;
-  return adminToken === "authenticated";
+  const cookieToken = request.cookies.get("admin_token")?.value;
+  const headerToken = request.headers.get("x-admin-token");
+  const token = headerToken || cookieToken;
+  if (!token) return false;
+  const { isValidAdminToken } = await import("@/lib/adminSessions");
+  return await isValidAdminToken(token);
 }
 
 export async function DELETE(request, { params }) {

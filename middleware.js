@@ -41,30 +41,16 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  // If request is for admin area or admin APIs, require token where appropriate
-  const token = request.cookies.get("admin_token")?.value;
+  // If request is for admin area or admin APIs, accept token from cookie OR header (per-tab tokens use header)
+  const cookieToken = request.cookies.get("admin_token")?.value;
+  const headerToken = request.headers.get("x-admin-token");
+  const token = headerToken || cookieToken;
 
-  // Protect admin APIs
-  if (pathname.startsWith("/api/admin")) {
-    if (!token) {
-      return NextResponse.json(
-        { error: "Unauthorized - Admin token required" },
-        { status: 401 },
-      );
-    }
-    return NextResponse.next();
-  }
-
-  // Protect admin UI pages (redirect to login if not authenticated), but allow the root admin login page (handled above)
-  if (pathname.startsWith("/admin")) {
-    if (!token) {
-      return NextResponse.redirect(new URL("/admin", request.url));
-    }
-    return NextResponse.next();
-  }
-
-  // For other API paths that we treat as protected, require token
-  if (pathname.startsWith("/api/posts") || pathname.startsWith("/api/comments")) {
+  // For other API paths that we treat as protected, require token presence (endpoints will validate token properly)
+  if (
+    pathname.startsWith("/api/posts") ||
+    pathname.startsWith("/api/comments")
+  ) {
     if (!token) {
       return NextResponse.json(
         { error: "Unauthorized - Admin token required" },
@@ -75,21 +61,44 @@ export async function middleware(request) {
 
   // If no admin cookie, check maintenance mode from settings API (edge-safe). Avoid importing node-only modules here.
   try {
-    const settingsUrl = new URL('/api/settings', request.url).toString();
-    const settingsRes = await fetch(settingsUrl, { method: 'GET', headers: { 'x-internal-middleware': '1' } });
+    const settingsUrl = new URL("/api/settings", request.url).toString();
+    const settingsRes = await fetch(settingsUrl, {
+      method: "GET",
+      headers: { "x-internal-middleware": "1" },
+    });
     if (settingsRes && settingsRes.ok) {
       const data = await settingsRes.json();
       const maintenanceMode = !!data.maintenanceMode;
 
       if (maintenanceMode) {
-        // Allow admins (requests carrying a valid admin_token) to bypass maintenance so they can turn it off
-        const adminToken = request.cookies.get("admin_token")?.value;
-        if (adminToken) {
-          return NextResponse.next();
+        // Allow admins (requests carrying a valid admin token in header or cookie) to bypass maintenance
+        if (token) {
+          try {
+            const validateUrl = new URL(
+              "/api/admin/validate",
+              request.url,
+            ).toString();
+            const headers = headerToken
+              ? { "x-admin-token": headerToken }
+              : { cookie: request.headers.get("cookie") || "" };
+            const val = await fetch(validateUrl, {
+              method: "GET",
+              headers: { ...headers, "x-internal-middleware": "1" },
+            });
+            if (val && val.ok) {
+              return NextResponse.next();
+            }
+          } catch (e) {
+            // validation failed -> fall through to maintenance response
+            console.error("Admin validate check failed in middleware:", e);
+          }
         }
 
         if (pathname.startsWith("/api")) {
-          return NextResponse.json({ error: "Site is in maintenance mode" }, { status: 503 });
+          return NextResponse.json(
+            { error: "Site is in maintenance mode" },
+            { status: 503 },
+          );
         } else {
           const body = `<!doctype html>
 <html lang="en">
@@ -117,7 +126,10 @@ export async function middleware(request) {
 </body>
 </html>`;
 
-          return new NextResponse(body, { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" }});
+          return new NextResponse(body, {
+            status: 503,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          });
         }
       }
     }

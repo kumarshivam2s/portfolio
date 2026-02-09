@@ -7,6 +7,7 @@ import AdminLinkProxy from "@/components/AdminLinkProxy";
 
 export default function AdminDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [checkedSession, setCheckedSession] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,21 +48,28 @@ export default function AdminDashboard() {
 
   const checkSession = async () => {
     try {
+      const { getAdminHeaders } = await import("@/lib/admin");
       const response = await fetch("/api/posts", {
-        credentials: "include",
+        headers: getAdminHeaders(),
       });
       if (response.ok) {
-        // Only consider session valid if client-side session timestamp exists and is not expired
+        // If server recognizes the cookie but this tab doesn't yet have a client-side login marker,
+        // set it now so the admin UI behaves consistently (clears when tab closes)
         const ts = getAdminLoginTs();
-        if (ts && Date.now() - ts < 1000 * 60 * 60) {
+        if (!ts || Date.now() - ts >= 1000 * 60 * 60) {
+          const newTs = Date.now();
+          try {
+            sessionStorage.setItem("admin_login_ts", String(newTs));
+          } catch (e) {}
           setIsLoggedIn(true);
           fetchStats();
-          // fetch settings for admin UI (maintenance badge, etc.)
           fetchSettingsAdmin();
-          // start auto-logout timer for remaining time
-          startAutoLogoutTimer(ts);
+          startAutoLogoutTimer(newTs);
         } else {
-          setIsLoggedIn(false);
+          setIsLoggedIn(true);
+          fetchStats();
+          fetchSettingsAdmin();
+          startAutoLogoutTimer(ts);
         }
       } else if (response.status === 401) {
         setIsLoggedIn(false);
@@ -69,15 +77,22 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Error checking session:", error);
       setIsLoggedIn(false);
+    } finally {
+      // mark that we've completed the session check so UI doesn't flash while we verify
+      try {
+        setCheckedSession(true);
+      } catch (e) {}
     }
   };
 
   const fetchStats = async () => {
     try {
+      const { getAdminHeaders } = await import("@/lib/admin");
+      const headers = getAdminHeaders();
       const [postsRes, projectsRes, commentsRes] = await Promise.all([
-        fetch("/api/posts", { credentials: "include" }),
-        fetch("/api/projects", { credentials: "include" }),
-        fetch("/api/comments", { credentials: "include" }),
+        fetch("/api/posts", { headers }),
+        fetch("/api/projects", { headers }),
+        fetch("/api/comments", { headers }),
       ]);
 
       const posts = (await postsRes.json()) || [];
@@ -114,14 +129,24 @@ export default function AdminDashboard() {
       window.__adminLogoutTimer = setTimeout(async () => {
         // Call server logout and clear client state
         try {
+          const token = (() => {
+            try {
+              return sessionStorage.getItem("admin_token");
+            } catch (e) {
+              return null;
+            }
+          })();
           await fetch("/api/admin/logout", {
             method: "POST",
-            credentials: "include",
+            headers: token ? { "x-admin-token": token } : {},
           });
         } catch (err) {
           console.error("Error during auto logout:", err);
         }
-        sessionStorage.removeItem("admin_login_ts");
+        try {
+          sessionStorage.removeItem("admin_login_ts");
+          sessionStorage.removeItem("admin_token");
+        } catch (e) {}
         setIsLoggedIn(false);
         alert("Session expired. Please log in again.");
       }, remaining);
@@ -142,12 +167,20 @@ export default function AdminDashboard() {
       });
 
       if (response.ok) {
-        const ts = Date.now();
-        // store login timestamp in sessionStorage so it clears when tab closes
-        sessionStorage.setItem("admin_login_ts", String(ts));
-        // remember email for audit logging
-        try { sessionStorage.setItem("admin_email", email); } catch (e) {}
-        startAutoLogoutTimer(ts);
+        const data = await response.json();
+        // If server returned a token, save it to sessionStorage (per-tab session)
+        try {
+          if (data?.admin_token) {
+            sessionStorage.setItem("admin_token", data.admin_token);
+            sessionStorage.setItem("admin_login_ts", String(Date.now()));
+          }
+          try {
+            sessionStorage.setItem("admin_email", email);
+          } catch (e) {}
+        } catch (e) {}
+
+        // start timer using current ts
+        startAutoLogoutTimer(Date.now());
         setIsLoggedIn(true);
         setEmail("");
         setPassword("");
@@ -167,9 +200,17 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     try {
+      const token = (() => {
+        try {
+          return sessionStorage.getItem("admin_token");
+        } catch (e) {
+          return null;
+        }
+      })();
+
       await fetch("/api/admin/logout", {
         method: "POST",
-        credentials: "include",
+        headers: token ? { "x-admin-token": token } : {},
       });
     } catch (err) {
       console.error("Logout error:", err);
@@ -178,8 +219,17 @@ export default function AdminDashboard() {
     setIsLoggedIn(false);
     setEmail("");
     setPassword("");
-    sessionStorage.removeItem("admin_login_ts");
-    sessionStorage.removeItem("admin_email");
+    try {
+      sessionStorage.removeItem("admin_login_ts");
+      sessionStorage.removeItem("admin_token");
+      sessionStorage.removeItem("admin_email");
+    } catch (e) {}
+
+    try {
+      localStorage.setItem("admin_logged_out", String(Date.now()));
+      setTimeout(() => localStorage.removeItem("admin_logged_out"), 1000);
+    } catch (e) {}
+
     if (window.__adminLogoutTimer) {
       clearTimeout(window.__adminLogoutTimer);
       window.__adminLogoutTimer = null;
@@ -479,20 +529,40 @@ export default function AdminDashboard() {
                 <ul className="space-y-2 text-gray-700 dark:text-gray-300 text-sm">
                   <li className="flex gap-2">
                     <span>•</span>
-                    <span>Toggle site features in real-time (Blog, Projects, Resume, Comments)</span>
+                    <span>
+                      Toggle site features in real-time (Blog, Projects, Resume,
+                      Comments)
+                    </span>
                   </li>
                   <li className="flex gap-2">
                     <span>•</span>
-                    <span>Enable/disable search or maintenance mode instantly</span>
+                    <span>
+                      Enable/disable search or maintenance mode instantly
+                    </span>
                   </li>
                   <li className="flex gap-2">
                     <span>•</span>
-                    <span>Changes broadcast to all open tabs for immediate effect</span>
+                    <span>
+                      Changes broadcast to all open tabs for immediate effect
+                    </span>
                   </li>
                 </ul>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!checkedSession) {
+    return (
+      <div className="min-h-screen p-8 lg:p-16 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-gray-300 dark:border-gray-700 border-t-gray-600 dark:border-t-gray-400 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            Checking session…
+          </p>
         </div>
       </div>
     );
