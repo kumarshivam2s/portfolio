@@ -367,4 +367,14 @@ a {
   html:not(.sidebar-collapsed) .open-sidebar-btn {
     display: none !important;
   }
+
+  /* Make sure both narrow controls align vertically */
+  .open-sidebar-btn,
+  .desktop-sidebar button[aria-label*="Collapse"],
+  .desktop-sidebar button[aria-label*="Expand"] {
+    height: 40px;
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+  }
 }

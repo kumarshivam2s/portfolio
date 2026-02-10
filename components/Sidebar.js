@@ -242,12 +242,12 @@ export default function Sidebar() {
       {/* Desktop Sidebar */}
       <aside className="desktop-sidebar hidden lg:flex lg:flex-col fixed left-0 top-0 h-screen w-[28rem] bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800">
         <div className="flex flex-col h-full px-4 pt-3 pb-4 relative">
-          {/* Desktop collapse toggle */}
+          {/* Desktop collapse toggle - narrow icon that sticks to the right edge */}
           <button
             onClick={toggleCollapsed}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="hidden lg:inline-flex items-center justify-center absolute top-3 right-3 w-9 h-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="hidden lg:inline-flex items-center justify-center absolute top-3 -right-3 w-10 h-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-l-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors transform"
           >
             {collapsed ? (
               <svg
@@ -270,7 +270,7 @@ export default function Sidebar() {
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                className="w-4 h-4"
+                className="w-4 h-4 rotate-180"
               >
                 <path
                   strokeLinecap="round"
@@ -411,7 +411,7 @@ export default function Sidebar() {
         onClick={toggleCollapsed}
         aria-label="Open sidebar"
         title="Open sidebar"
-        className="open-sidebar-btn hidden items-center gap-2 fixed left-0 top-16 z-50 ml-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="open-sidebar-btn hidden items-center justify-center fixed top-3 left-0 z-50 -ml-3 w-10 h-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -424,10 +424,9 @@ export default function Sidebar() {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="2"
-            d="M9 5l7 7-7 7"
+            d="M15 19l-7-7 7-7"
           />
         </svg>
-        <span className="text-sm">More</span>
       </button>
     </>
   );
