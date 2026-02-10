@@ -361,6 +361,27 @@ a {
   /* Show the open-sidebar button only when collapsed */
   html.sidebar-collapsed .open-sidebar-btn {
     display: flex !important;
+    /* make more visible (~75-90% shown) and add subtle glow for visibility */
+    left: -5px !important;
+    box-shadow:
+      0 6px 18px rgba(16, 24, 40, 0.08),
+      0 1px 4px rgba(16, 24, 40, 0.04);
+  }
+
+  /* Dark-mode: brighter subtle glow so button stands out against dark background */
+  /* Target the html when it's both collapsed and dark (order-insensitive) */
+  html.sidebar-collapsed.dark .open-sidebar-btn,
+  html.dark.sidebar-collapsed .open-sidebar-btn {
+    box-shadow:
+      0 8px 28px rgba(255, 255, 255, 0.06),
+      0 2px 8px rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  /* Also ensure the collapse button (inside sidebar) has a visible border in dark mode */
+  .dark .desktop-sidebar .hidden.lg\:inline-flex[aria-label*="Collapse"],
+  .dark .desktop-sidebar .hidden.lg\:inline-flex[title*="Collapse"] {
+    border-color: rgba(255, 255, 255, 0.06) !important;
   }
 
   /* Ensure the button is hidden when sidebar is open */
@@ -368,11 +389,11 @@ a {
     display: none !important;
   }
 
-  /* Make sure both narrow controls align vertically */
+  /* Make sure both narrow controls align vertically and are double height */
   .open-sidebar-btn,
   .desktop-sidebar button[aria-label*="Collapse"],
   .desktop-sidebar button[aria-label*="Expand"] {
-    height: 40px;
+    height: 80px;
     width: 40px;
     min-width: 40px;
     padding: 0;

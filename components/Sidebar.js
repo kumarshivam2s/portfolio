@@ -247,7 +247,7 @@ export default function Sidebar() {
             onClick={toggleCollapsed}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="hidden lg:inline-flex items-center justify-center absolute top-6 -right-2.5 w-10 h-20 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-l-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors transform"
+            className="hidden lg:inline-flex items-center justify-center absolute top-6 -right-1 w-10 h-20 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-l-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors transform"
           >
             {collapsed ? (
               /* When collapsed, show right arrow to expand */
@@ -413,14 +413,14 @@ export default function Sidebar() {
         onClick={toggleCollapsed}
         aria-label="Open sidebar"
         title="Open sidebar"
-        className="open-sidebar-btn hidden items-center justify-center fixed top-6 -left-2.5 z-50 w-10 h-20 bg-blue-600 dark:bg-gray-800 border border-blue-600 dark:border-gray-700 rounded-r-lg hover:bg-blue-700 dark:hover:bg-gray-700 transition-colors shadow-sm text-white"
+        className="open-sidebar-btn hidden items-center justify-center fixed top-6 -left-2.5 z-50 w-10 h-20 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-r-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm text-gray-800 dark:text-gray-100"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          className="w-4 h-4 text-white"
+          className="w-4 h-4 text-gray-800 dark:text-gray-100"
         >
           <path
             strokeLinecap="round"
