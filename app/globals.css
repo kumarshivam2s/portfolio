@@ -357,4 +357,9 @@ a {
   html.sidebar-collapsed .main-content {
     margin-left: 0 !important;
   }
+
+  /* Show the open-sidebar button only when collapsed */
+  html.sidebar-collapsed .open-sidebar-btn {
+    display: flex !important;
+  }
 }
