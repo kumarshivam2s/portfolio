@@ -411,7 +411,7 @@ export default function Sidebar() {
         onClick={toggleCollapsed}
         aria-label="Open sidebar"
         title="Open sidebar"
-        className="open-sidebar-btn hidden lg:flex items-center gap-2 fixed left-0 top-16 z-50 ml-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="open-sidebar-btn hidden items-center gap-2 fixed left-0 top-16 z-50 ml-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -427,7 +427,7 @@ export default function Sidebar() {
             d="M9 5l7 7-7 7"
           />
         </svg>
-        <span className="text-sm">Open Sidebar</span>
+        <span className="text-sm">More</span>
       </button>
     </>
   );

@@ -362,4 +362,9 @@ a {
   html.sidebar-collapsed .open-sidebar-btn {
     display: flex !important;
   }
+
+  /* Ensure the button is hidden when sidebar is open */
+  html:not(.sidebar-collapsed) .open-sidebar-btn {
+    display: none !important;
+  }
 }
