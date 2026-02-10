@@ -11,7 +11,7 @@ export default function AdminHomePreview() {
     let mounted = true;
     (async () => {
       try {
-        const { getAdminHeaders } = await import("@/lib/admin");
+        const { getAdminHeaders } = await import("@/lib/adminClient");
         const headers = getAdminHeaders();
 
         const res = await fetch("/api/settings", { headers });
@@ -35,7 +35,7 @@ export default function AdminHomePreview() {
 
   return (
     <div className="min-h-screen p-8 lg:p-16">
-      <div className="max-w-4xl">
+      <div className="max-w-6xl mx-auto w-full">
         <h1 className="text-4xl lg:text-5xl font-bold mb-4">
           Home (Admin Preview)
         </h1>

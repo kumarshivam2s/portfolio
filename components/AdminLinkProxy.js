@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { isAdminSessionClient } from "@/lib/admin";
+import { isAdminSessionClient } from "@/lib/adminClient";
 
 export default function AdminLinkProxy() {
   useEffect(() => {
@@ -48,10 +48,35 @@ export default function AdminLinkProxy() {
           return;
         }
 
+        // Include admin_token (if present in sessionStorage) so new tabs can pick up per-tab token
+        try {
+          const t = sessionStorage.getItem("admin_token");
+          if (t) abs.searchParams.set("admin_token", t);
+        } catch (e) {}
+
         // Use absolute admin URL so users see the full admin preview URL in link text
         const adminPath = `${window.location.origin}/admin${abs.pathname}${abs.search}${abs.hash}`;
         a.setAttribute("href", adminPath);
         a.dataset.adminProxied = "1";
+
+        // Attach a click handler so clicking the link sets admin_view for this tab immediately
+        if (!a.dataset.adminClickAttached) {
+          a.addEventListener("click", function (ev) {
+            try {
+              sessionStorage.setItem(
+                "admin_view",
+                JSON.stringify({ path: abs.pathname, ts: Date.now() }),
+              );
+              // clear any previous dismissed flag so banner re-shows
+              sessionStorage.removeItem("admin_view_banner_dismissed");
+              // Notify same-tab listeners immediately so the banner can appear without a reload
+              try {
+                window.dispatchEvent(new Event("admin_view_changed"));
+              } catch (e) {}
+            } catch (e) {}
+          });
+          a.dataset.adminClickAttached = "1";
+        }
       } catch (e) {
         // noop
       }

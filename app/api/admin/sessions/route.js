@@ -3,7 +3,11 @@ import { isValidAdminToken, createAdminSession } from "@/lib/adminSessions";
 
 export async function POST(request) {
   try {
-    const token = request.headers.get("x-admin-token");
+    // Accept token either from header or cookie
+    const headerToken = request.headers.get("x-admin-token");
+    const cookieToken = request.cookies.get("admin_token")?.value;
+    const token = headerToken || cookieToken;
+
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

@@ -1,4 +1,4 @@
-import "@testing-library/jest-dom/extend-expect";
+import "@testing-library/jest-dom";
 
 // Polyfill for fetch in tests
 import "whatwg-fetch";

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FiArrowUp, FiArrowDown } from "react-icons/fi";
 
 export default function ManagePosts() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function ManagePosts() {
 
   const fetchPosts = async () => {
     try {
-      const { getAdminHeaders } = await import("@/lib/admin");
+      const { getAdminHeaders } = await import("@/lib/adminClient");
       const response = await fetch("/api/posts", {
         headers: getAdminHeaders(),
       });
@@ -46,7 +47,7 @@ export default function ManagePosts() {
     if (!confirm("Are you sure you want to delete this post?")) return;
 
     try {
-      const { getAdminHeaders } = await import("@/lib/admin");
+      const { getAdminHeaders } = await import("@/lib/adminClient");
       const response = await fetch(`/api/posts/${id}`, {
         method: "DELETE",
         headers: getAdminHeaders(),
@@ -67,7 +68,7 @@ export default function ManagePosts() {
   const handleTogglePublish = async (id, currentStatus) => {
     try {
       const newStatus = currentStatus === "published" ? "draft" : "published";
-      const { getAdminHeaders } = await import("@/lib/admin");
+      const { getAdminHeaders } = await import("@/lib/adminClient");
       const response = await fetch(`/api/posts/${id}`, {
         method: "PUT",
         headers: { ...getAdminHeaders(), "Content-Type": "application/json" },
@@ -86,6 +87,27 @@ export default function ManagePosts() {
     }
   };
 
+  const handleReorder = async (id, direction) => {
+    try {
+      const { getAdminHeaders } = await import("@/lib/adminClient");
+      const res = await fetch(`/api/posts/${id}/reorder`, {
+        method: "POST",
+        headers: { ...getAdminHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ direction }),
+      });
+      if (res.ok) {
+        // refresh posts to reflect new order
+        await fetchPosts();
+      } else {
+        const data = await res.json();
+        alert(data?.error || "Failed to move post");
+      }
+    } catch (err) {
+      console.error("Error reordering post:", err);
+      alert("Error reordering post");
+    }
+  };
+
   const filteredPosts = posts
     .filter((p) => (filter === "all" ? true : p.status === filter))
     .filter(
@@ -93,6 +115,96 @@ export default function ManagePosts() {
         p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.author && p.author.toLowerCase().includes(searchTerm.toLowerCase())),
     );
+
+  // Drag and drop handlers
+  const dragSrcRef = useRef(null);
+  const [dragOverId, setDragOverId] = useState(null);
+
+  const onDragStart = (e, id) => {
+    dragSrcRef.current = id;
+    try {
+      e.dataTransfer.effectAllowed = "move";
+    } catch (err) {}
+  };
+
+  const onDragOver = (e, id) => {
+    e.preventDefault();
+    setDragOverId(id);
+  };
+
+  const onDrop = async (e, id) => {
+    e.preventDefault();
+    const srcId = dragSrcRef.current;
+    setDragOverId(null);
+    if (!srcId || srcId === id) return;
+
+    // Build sorted posts array based on current positions
+    const postsSorted = posts
+      .slice()
+      .sort((a, b) => (a.position || 0) - (b.position || 0));
+    const filteredSet = new Set(filteredPosts.map((p) => p._id));
+    const originalFilteredIds = postsSorted
+      .filter((p) => filteredSet.has(p._id))
+      .map((p) => p._id);
+
+    // Compute new filtered order by moving srcId to the position of id
+    const newFiltered = [...originalFilteredIds];
+    const srcIndex = newFiltered.indexOf(srcId);
+    const destIndex = newFiltered.indexOf(id);
+    if (srcIndex === -1 || destIndex === -1) {
+      // Fallback: just refresh
+      await fetchPosts();
+      return;
+    }
+    newFiltered.splice(srcIndex, 1);
+    newFiltered.splice(destIndex, 0, srcId);
+
+    // Remove all original filtered items from postsSorted
+    const remaining = postsSorted.filter(
+      (p) => !originalFilteredIds.includes(p._id),
+    );
+    const firstIndex = postsSorted.findIndex((p) =>
+      originalFilteredIds.includes(p._id),
+    );
+
+    // Map ids to full post objects for insertion
+    const idToPost = Object.fromEntries(posts.map((p) => [p._id, p]));
+    const inserted = newFiltered.map((fid) => idToPost[fid]);
+
+    const newOrdered = [
+      ...remaining.slice(0, firstIndex),
+      ...inserted,
+      ...remaining.slice(firstIndex),
+    ];
+
+    // Assign new sequential positions
+    const orderPayload = newOrdered.map((p, i) => ({
+      id: p._id,
+      position: i + 1,
+    }));
+
+    // Optimistic update
+    setPosts(newOrdered.map((p, i) => ({ ...p, position: i + 1 })));
+
+    try {
+      const { getAdminHeaders } = await import("@/lib/adminClient");
+      const res = await fetch("/api/posts/reorder", {
+        method: "POST",
+        headers: { ...getAdminHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ order: orderPayload }),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data?.error || "Failed to reorder posts");
+        await fetchPosts();
+      }
+    } catch (err) {
+      console.error("Error reordering posts:", err);
+      alert("Error reordering posts");
+      await fetchPosts();
+    }
+  };
 
   if (loading) {
     return (
@@ -174,10 +286,14 @@ export default function ManagePosts() {
                 </tr>
               </thead>
               <tbody>
-                {filteredPosts.map((post) => (
+                {filteredPosts.map((post, idx) => (
                   <tr
                     key={post._id}
-                    className="border-b border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    draggable
+                    onDragStart={(e) => onDragStart(e, post._id)}
+                    onDragOver={(e) => onDragOver(e, post._id)}
+                    onDrop={(e) => onDrop(e, post._id)}
+                    className={`border-b border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 ${dragOverId === post._id ? "bg-blue-50 dark:bg-blue-900/20" : ""} cursor-grab`}
                   >
                     <td className="px-6 py-4 font-medium">
                       {post.title}
@@ -220,6 +336,7 @@ export default function ManagePosts() {
                       >
                         {post.status === "published" ? "Unpublish" : "Publish"}
                       </button>
+
                       <button
                         onClick={() => handleDelete(post._id)}
                         className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"

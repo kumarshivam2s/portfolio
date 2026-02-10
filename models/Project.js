@@ -12,7 +12,7 @@ export async function getAllProjects(limit = null) {
       .find({
         $or: [{ status: "published" }, { status: "Published" }],
       })
-      .sort({ featured: -1, createdAt: -1 });
+      .sort({ position: 1, featured: -1, createdAt: -1 });
 
     if (limit) {
       query = query.limit(limit);
@@ -34,7 +34,7 @@ export async function getAllProjectsAdmin() {
     const projects = await db
       .collection("projects")
       .find({})
-      .sort({ featured: -1, createdAt: -1 })
+      .sort({ position: 1, featured: -1, createdAt: -1 })
       .toArray();
 
     return JSON.parse(JSON.stringify(projects));
@@ -86,6 +86,14 @@ export async function createProject(projectData) {
     const client = await clientPromise;
     const db = client.db("portfolio");
 
+    const top = await db
+      .collection("projects")
+      .find({})
+      .sort({ position: -1 })
+      .limit(1)
+      .toArray();
+    const nextPos = top.length ? (top[0].position || 0) + 1 : 1;
+
     const project = {
       ...projectData,
       createdAt: new Date(),
@@ -95,6 +103,7 @@ export async function createProject(projectData) {
       featured: projectData.featured || false,
       images: projectData.images || [],
       links: projectData.links || [],
+      position: nextPos,
     };
 
     const result = await db.collection("projects").insertOne(project);
@@ -196,6 +205,75 @@ export async function toggleProjectFeatured(id) {
     return !project.featured;
   } catch (error) {
     console.error("Error toggling project featured:", error);
+    throw error;
+  }
+}
+
+export async function swapProjectPosition(id, direction) {
+  try {
+    const client = await clientPromise;
+    const db = client.db("portfolio");
+
+    // Ensure positions are set for ALL documents. If any are missing, normalize positions deterministically by createdAt descending
+    const missingPosCount = await db
+      .collection("projects")
+      .countDocuments({ position: { $exists: false } });
+
+    if (missingPosCount > 0) {
+      const all = await db
+        .collection("projects")
+        .find({})
+        .sort({ createdAt: -1 })
+        .toArray();
+      for (let i = 0; i < all.length; i++) {
+        await db
+          .collection("projects")
+          .updateOne({ _id: all[i]._id }, { $set: { position: i + 1 } });
+      }
+    }
+
+    const project = await db
+      .collection("projects")
+      .findOne({ _id: new ObjectId(id) });
+
+    if (!project) throw new Error("Project not found");
+
+    const currentPos = project.position || 0;
+    let neighbor;
+
+    if (direction === "up") {
+      neighbor = await db
+        .collection("projects")
+        .find({ position: { $lt: currentPos } })
+        .sort({ position: -1 })
+        .limit(1)
+        .toArray();
+      neighbor = neighbor[0];
+    } else {
+      neighbor = await db
+        .collection("projects")
+        .find({ position: { $gt: currentPos } })
+        .sort({ position: 1 })
+        .limit(1)
+        .toArray();
+      neighbor = neighbor[0];
+    }
+
+    if (!neighbor) return false;
+
+    await db
+      .collection("projects")
+      .updateOne(
+        { _id: project._id },
+        { $set: { position: neighbor.position } },
+      );
+    await db
+      .collection("projects")
+      .updateOne({ _id: neighbor._id }, { $set: { position: currentPos } });
+
+    return true;
+  } catch (error) {
+    console.error("Error swapping project position:", error);
     throw error;
   }
 }

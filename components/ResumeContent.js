@@ -20,7 +20,7 @@ export default function ResumeContent() {
 
   return (
     <div className="min-h-screen p-8 lg:p-16">
-      <div className="max-w-4xl">
+      <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl lg:text-5xl font-bold mb-2">Resume</h1>
         <p className="text-gray-600 dark:text-gray-400 mb-8">
           Data Engineer focused on scalable systems, real-time pipelines, and
@@ -119,7 +119,7 @@ export default function ResumeContent() {
             Selected Projects
           </h2>
 
-          <div className="space-y-10 text-sm text-gray-600 dark:text-gray-500 leading-relaxed">
+          <div className="space-y-10 text-base text-gray-600 dark:text-gray-500 leading-relaxed">
             <div>
               <h3 className="font-semibold text-base text-gray-800 dark:text-gray-200 mb-2">
                 Real-Time Sales Analytics Pipeline

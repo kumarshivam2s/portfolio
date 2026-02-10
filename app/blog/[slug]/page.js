@@ -115,7 +115,7 @@ export default function BlogPostPage() {
   if (!post) {
     return (
       <div className="min-h-screen p-8 lg:p-16">
-        <div className="max-w-4xl">
+        <div className="max-w-6xl mx-auto">
           <h1 className="text-4xl font-bold mb-4">Post Not Found</h1>
           <p className="text-gray-600 dark:text-gray-400 text-sm">
             The post you're looking for doesn't exist.
@@ -127,7 +127,7 @@ export default function BlogPostPage() {
 
   return (
     <div className="min-h-screen p-8 lg:p-16">
-      <div className="max-w-5xl">
+      <div className="max-w-6xl mx-auto w-full">
         {/* Post Header */}
         <header className="mb-12">
           {post.image && (

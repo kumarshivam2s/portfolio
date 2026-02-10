@@ -101,7 +101,7 @@ export default function AdminTestimonials() {
 
   return (
     <div className="min-h-screen p-8 lg:p-16">
-      <div className="max-w-4xl">
+      <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <Link
             href="/admin"

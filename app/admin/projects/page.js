@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getAdminHeaders } from "@/lib/adminClient";
 
 export default function ManageProjects() {
   const [projects, setProjects] = useState([]);
@@ -15,11 +16,49 @@ export default function ManageProjects() {
     fetchProjects();
   }, []);
 
+  const fetchWithAdminRetry = async (url, opts = {}) => {
+    // first attempt with existing headers
+    const headers = { ...(opts.headers || {}), ...getAdminHeaders() };
+    let res = await fetch(url, {
+      ...opts,
+      headers,
+      credentials: opts.credentials || "include",
+    });
+
+    if (res.status !== 401) return res;
+
+    // 401 -> attempt to seed per-tab session using cookie or parent token
+    try {
+      const seed = await fetch("/api/admin/sessions", {
+        method: "POST",
+        credentials: "include",
+        headers: getAdminHeaders(),
+      });
+      if (seed.ok) {
+        const sdata = await seed.json();
+        if (sdata?.admin_token) {
+          try {
+            sessionStorage.setItem("admin_token", sdata.admin_token);
+            sessionStorage.setItem("admin_login_ts", String(Date.now()));
+          } catch (e) {}
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    // retry once with possibly new token
+    const headers2 = { ...(opts.headers || {}), ...getAdminHeaders() };
+    return await fetch(url, {
+      ...opts,
+      headers: headers2,
+      credentials: opts.credentials || "include",
+    });
+  };
+
   const fetchProjects = async () => {
     try {
-      const response = await fetch("/api/projects", {
-        credentials: "include",
-      });
+      const response = await fetchWithAdminRetry("/api/projects", {});
       if (response.ok) {
         const data = await response.json();
         setProjects(data);
@@ -37,9 +76,10 @@ export default function ManageProjects() {
     if (!confirm("Are you sure you want to delete this project?")) return;
 
     try {
-      const response = await fetch(`/api/projects/${id}`, {
+      const headers = getAdminHeaders();
+      const response = await fetchWithAdminRetry(`/api/projects/${id}`, {
         method: "DELETE",
-        credentials: "include",
+        headers,
       });
 
       if (response.ok) {
@@ -54,11 +94,11 @@ export default function ManageProjects() {
 
   const handleTogglePublish = async (id, currentStatus) => {
     try {
-      const response = await fetch(`/api/projects/${id}`, {
+      const headers = getAdminHeaders();
+      const response = await fetchWithAdminRetry(`/api/projects/${id}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({ action: "publish" }),
-        credentials: "include",
       });
 
       if (response.ok) {
@@ -79,11 +119,11 @@ export default function ManageProjects() {
 
   const handleToggleFeatured = async (id, currentFeatured) => {
     try {
-      const response = await fetch(`/api/projects/${id}`, {
+      const headers = getAdminHeaders();
+      const response = await fetchWithAdminRetry(`/api/projects/${id}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({ action: "featured" }),
-        credentials: "include",
       });
 
       if (response.ok) {
@@ -97,9 +137,112 @@ export default function ManageProjects() {
     }
   };
 
+  const handleReorderProject = async (id, direction) => {
+    try {
+      const headers = getAdminHeaders();
+      const res = await fetchWithAdminRetry(`/api/projects/${id}/reorder`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ direction }),
+      });
+
+      if (res.ok) {
+        await fetchProjects();
+      } else {
+        const data = await res.json();
+        alert(data?.error || "Failed to move project");
+      }
+    } catch (err) {
+      console.error("Error reordering project:", err);
+      alert("Error reordering project");
+    }
+  };
+
   const filteredProjects = projects
     .filter((p) => (filter === "all" ? true : p.status === filter))
     .filter((p) => p.title.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  // Drag and drop handlers for projects
+  const projDragSrcRef = useRef(null);
+  const [projDragOverId, setProjDragOverId] = useState(null);
+
+  const onProjDragStart = (e, id) => {
+    projDragSrcRef.current = id;
+    try {
+      e.dataTransfer.effectAllowed = "move";
+    } catch (err) {}
+  };
+
+  const onProjDragOver = (e, id) => {
+    e.preventDefault();
+    setProjDragOverId(id);
+  };
+
+  const onProjDrop = async (e, id) => {
+    e.preventDefault();
+    const srcId = projDragSrcRef.current;
+    setProjDragOverId(null);
+    if (!srcId || srcId === id) return;
+
+    const projectsSorted = projects
+      .slice()
+      .sort((a, b) => (a.position || 0) - (b.position || 0));
+    const filteredSet = new Set(filteredProjects.map((p) => p._id));
+    const originalFilteredIds = projectsSorted
+      .filter((p) => filteredSet.has(p._id))
+      .map((p) => p._id);
+
+    const newFiltered = [...originalFilteredIds];
+    const srcIndex = newFiltered.indexOf(srcId);
+    const destIndex = newFiltered.indexOf(id);
+    if (srcIndex === -1 || destIndex === -1) {
+      await fetchProjects();
+      return;
+    }
+    newFiltered.splice(srcIndex, 1);
+    newFiltered.splice(destIndex, 0, srcId);
+
+    const remaining = projectsSorted.filter(
+      (p) => !originalFilteredIds.includes(p._id),
+    );
+    const firstIndex = projectsSorted.findIndex((p) =>
+      originalFilteredIds.includes(p._id),
+    );
+    const idToProject = Object.fromEntries(projects.map((p) => [p._id, p]));
+    const inserted = newFiltered.map((fid) => idToProject[fid]);
+
+    const newOrdered = [
+      ...remaining.slice(0, firstIndex),
+      ...inserted,
+      ...remaining.slice(firstIndex),
+    ];
+    const orderPayload = newOrdered.map((p, i) => ({
+      id: p._id,
+      position: i + 1,
+    }));
+
+    // Optimistic update
+    setProjects(newOrdered.map((p, i) => ({ ...p, position: i + 1 })));
+
+    try {
+      const { getAdminHeaders } = await import("@/lib/adminClient");
+      const res = await fetch("/api/projects/reorder", {
+        method: "POST",
+        headers: { ...getAdminHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ order: orderPayload }),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data?.error || "Failed to reorder projects");
+        await fetchProjects();
+      }
+    } catch (err) {
+      console.error("Error reordering projects:", err);
+      alert("Error reordering projects");
+      await fetchProjects();
+    }
+  };
 
   if (loading) {
     return (
@@ -178,10 +321,14 @@ export default function ManageProjects() {
                 </tr>
               </thead>
               <tbody>
-                {filteredProjects.map((project) => (
+                {filteredProjects.map((project, idx) => (
                   <tr
                     key={project._id}
-                    className="border-b border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    draggable
+                    onDragStart={(e) => onProjDragStart(e, project._id)}
+                    onDragOver={(e) => onProjDragOver(e, project._id)}
+                    onDrop={(e) => onProjDrop(e, project._id)}
+                    className={`border-b border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 ${projDragOverId === project._id ? "bg-blue-50 dark:bg-blue-900/20" : ""} cursor-grab`}
                   >
                     <td className="px-6 py-4">{project.title}</td>
                     <td className="px-6 py-4">
@@ -234,6 +381,7 @@ export default function ManageProjects() {
                       >
                         {project.featured ? "Unfeature" : "Feature"}
                       </button>
+
                       <button
                         onClick={() => handleDelete(project._id)}
                         className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import LiveControls from "@/components/LiveControls";
 import AdminLinkProxy from "@/components/AdminLinkProxy";
+import { getAdminLoginTs, getAdminHeaders } from "@/lib/adminClient";
 
 export default function AdminDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -48,13 +49,14 @@ export default function AdminDashboard() {
 
   const checkSession = async () => {
     try {
-      const { getAdminHeaders } = await import("@/lib/admin");
-      const response = await fetch("/api/posts", {
-        headers: getAdminHeaders(),
+      const headers = getAdminHeaders();
+      // Use the protected validate endpoint which returns 401 when no valid admin session exists
+      const response = await fetch("/api/admin/validate", {
+        headers,
+        credentials: "include",
       });
       if (response.ok) {
-        // If server recognizes the cookie but this tab doesn't yet have a client-side login marker,
-        // set it now so the admin UI behaves consistently (clears when tab closes)
+        // Valid admin session — set per-tab marker if missing and load admin data
         const ts = getAdminLoginTs();
         if (!ts || Date.now() - ts >= 1000 * 60 * 60) {
           const newTs = Date.now();
@@ -71,7 +73,8 @@ export default function AdminDashboard() {
           fetchSettingsAdmin();
           startAutoLogoutTimer(ts);
         }
-      } else if (response.status === 401) {
+      } else {
+        // Not authorized
         setIsLoggedIn(false);
       }
     } catch (error) {
@@ -87,7 +90,6 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      const { getAdminHeaders } = await import("@/lib/admin");
       const headers = getAdminHeaders();
       const [postsRes, projectsRes, commentsRes] = await Promise.all([
         fetch("/api/posts", { headers }),
@@ -139,6 +141,7 @@ export default function AdminDashboard() {
           await fetch("/api/admin/logout", {
             method: "POST",
             headers: token ? { "x-admin-token": token } : {},
+            credentials: "include",
           });
         } catch (err) {
           console.error("Error during auto logout:", err);
@@ -161,13 +164,27 @@ export default function AdminDashboard() {
     try {
       const response = await fetch("/api/admin/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify({ email, password }),
         credentials: "include",
       });
 
       if (response.ok) {
-        const data = await response.json();
+        // Expecting JSON; if server returns HTML for some reason, fallback to text handling
+        let data;
+        try {
+          data = await response.json();
+        } catch (err) {
+          const txt = await response.text();
+          console.warn("Login returned non-JSON response:", txt);
+          setError("Login succeeded (non-JSON response). Reloading...");
+          window.location.reload();
+          return;
+        }
+
         // If server returned a token, save it to sessionStorage (per-tab session)
         try {
           if (data?.admin_token) {
@@ -187,8 +204,17 @@ export default function AdminDashboard() {
         fetchStats();
         fetchSettingsAdmin();
       } else {
-        const data = await response.json();
-        setError(data.error || "Invalid email or password");
+        let errMsg = "Invalid email or password";
+        try {
+          const data = await response.json();
+          errMsg = data.error || errMsg;
+        } catch (e) {
+          try {
+            const txt = await response.text();
+            if (txt) errMsg = txt;
+          } catch (e) {}
+        }
+        setError(errMsg);
       }
     } catch (error) {
       setError("Login failed. Please try again.");
@@ -211,6 +237,7 @@ export default function AdminDashboard() {
       await fetch("/api/admin/logout", {
         method: "POST",
         headers: token ? { "x-admin-token": token } : {},
+        credentials: "include",
       });
     } catch (err) {
       console.error("Logout error:", err);
@@ -309,8 +336,110 @@ export default function AdminDashboard() {
           {/* Admin Sections */}
           <h2 className="text-2xl font-bold mb-6">Management</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {/* Posts (Create + Manage) */}
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-600 dark:hover:border-blue-400 transition-colors self-start md:col-span-1 lg:col-span-2 flex flex-col h-full">
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Posts</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+                  Write and manage blog posts: create, edit, feature, or delete posts
+                </p>
+              </div>
+              <div className="flex gap-3 mt-auto">
+                <Link
+                  href="/admin/posts/new"
+                  className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  Create
+                </Link>
+                <Link
+                  href="/admin/posts"
+                  className="inline-block px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm font-medium"
+                >
+                  Manage
+                </Link>
+              </div>
+            </div>
+
+            {/* Projects (Create + Manage) */}
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-green-600 dark:hover:border-green-400 transition-colors self-start md:col-span-1 lg:col-span-2 flex flex-col h-full">
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Projects</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+                  Add and manage projects with images, links, and feature toggles
+                </p>
+              </div>
+              <div className="flex gap-3 mt-auto">
+                <Link
+                  href="/admin/projects/new"
+                  className="inline-block px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                >
+                  Create
+                </Link>
+                <Link
+                  href="/admin/projects"
+                  className="inline-block px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm font-medium"
+                >
+                  Manage
+                </Link>
+              </div>
+            </div>
+
+            {/* Moderate Comments */}
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-purple-600 dark:hover:border-purple-400 transition-colors self-start md:col-span-1 lg:col-span-1 flex flex-col h-full">
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Moderate Comments</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+                  Review, approve, or reject user comments
+                </p>
+              </div>
+              <div className="mt-auto">
+                <Link
+                  href="/admin/comments"
+                  className="inline-block px-4 py-2 min-w-[140px] text-center bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                >
+                  View Comments
+                </Link>
+              </div>
+            </div>
+
+            {/* Testimonials */}
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-pink-600 dark:hover:border-pink-400 transition-colors self-start md:col-span-1 lg:col-span-1 flex flex-col h-full">
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Testimonials</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+                  Add, edit, or remove testimonials shown on the public site
+                </p>
+              </div>
+              <div className="mt-auto">
+                <Link
+                  href="/admin/testimonials"
+                  className="inline-block px-4 py-2 min-w-[140px] text-center bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors text-sm font-medium"
+                >
+                  Manage Testimonials
+                </Link>
+              </div>
+            </div>
+
+            {/* Diagnostics */}
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-yellow-600 dark:hover:border-yellow-400 transition-colors self-start md:col-span-1 lg:col-span-1 flex flex-col h-full">
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Diagnostics</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+                  View raw settings document and recent change logs.
+                </p>
+              </div>
+              <div className="mt-auto">
+                <Link
+                  href="/admin/diagnostics"
+                  className="inline-block px-4 py-2 min-w-[140px] text-center bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
+                >
+                  Diagnostics
+                </Link>
+              </div>
+            </div>
+
             {/* Live Controls - full width on md+ */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-orange-500 focus-within:border-orange-500 transition-colors flex flex-col h-full md:col-span-2 lg:col-span-4">
+            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-orange-500 dark:hover:border-orange-300 focus-within:border-orange-500 transition-colors flex flex-col h-full md:col-span-2 lg:col-span-4">
               <div className="mb-4">
                 <h3 className="text-lg font-semibold">Live Controls</h3>
                 <p className="text-gray-600 dark:text-gray-400 mt-4 text-sm">
@@ -321,104 +450,6 @@ export default function AdminDashboard() {
               <div className="flex-1 mt-2">
                 <LiveControls />
               </div>
-            </div>
-
-            {/* Create Post */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-500 transition-colors self-start">
-              <h3 className="text-lg font-semibold mb-3">Create Post</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                Write and publish new blog posts with rich text editor
-              </p>
-              <Link
-                href="/admin/posts/new"
-                className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                New Post
-              </Link>
-            </div>
-
-            {/* Manage Posts */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-500 transition-colors self-start">
-              <h3 className="text-lg font-semibold mb-3">Manage Posts</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                Edit, feature, or delete posts
-              </p>
-              <Link
-                href="/admin/posts"
-                className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                View Posts
-              </Link>
-            </div>
-
-            {/* Create Project */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-green-500 transition-colors self-start">
-              <h3 className="text-lg font-semibold mb-3">Create Project</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                Add new projects with images and links
-              </p>
-              <Link
-                href="/admin/projects/new"
-                className="inline-block px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-              >
-                New Project
-              </Link>
-            </div>
-
-            {/* Manage Projects */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-green-500 transition-colors self-start">
-              <h3 className="text-lg font-semibold mb-3">Manage Projects</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                Edit, delete, or feature projects
-              </p>
-              <Link
-                href="/admin/projects"
-                className="inline-block px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-              >
-                View Projects
-              </Link>
-            </div>
-
-            {/* Comments */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-purple-500 transition-colors self-start">
-              <h3 className="text-lg font-semibold mb-3">Moderate Comments</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                Review, approve, or reject user comments
-              </p>
-              <Link
-                href="/admin/comments"
-                className="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
-              >
-                View Comments
-              </Link>
-            </div>
-
-            {/* Testimonials */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-pink-500 transition-colors self-start">
-              <h3 className="text-lg font-semibold mb-3">Testimonials</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                Add, edit, or remove testimonials shown on the public site
-              </p>
-              <Link
-                href="/admin/testimonials"
-                className="inline-block px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors text-sm font-medium"
-              >
-                Manage Testimonials
-              </Link>
-            </div>
-
-            {/* Diagnostics */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-yellow-500 transition-colors self-start">
-              <h3 className="text-lg font-semibold mb-3">Diagnostics</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                View raw settings document and recent change logs.
-              </p>
-              <Link
-                href="/admin/diagnostics"
-                className="inline-block px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
-              >
-                Diagnostics
-              </Link>
             </div>
           </div>
 
@@ -569,10 +600,10 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="fixed inset-0 lg:left-[28rem] flex items-center justify-center p-4 pt-[65px] lg:pt-0 overflow-hidden">
       <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-gray-900 p-8 rounded-lg border border-gray-300 dark:border-gray-700">
-          <h1 className="text-2xl font-bold mb-2 text-center">Admin Login</h1>
+        <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-300 dark:border-gray-700">
+          <h1 className="text-3xl font-bold mb-4 text-center">Admin Login</h1>
           <p className="text-gray-600 dark:text-gray-400 text-center mb-6 text-sm">
             Sign in to access the admin panel
           </p>
@@ -600,7 +631,7 @@ export default function AdminDashboard() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="admin@example.com"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600 text-base"
               />
             </div>
 
@@ -615,20 +646,20 @@ export default function AdminDashboard() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600 text-base"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-semibold text-sm"
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-semibold text-base"
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
-          <p className="text-xs text-gray-600 dark:text-gray-400 text-center mt-4">
+          <p className="text-xs text-gray-600 dark:text-gray-400 text-center mt-3">
             Check .env.local for admin credentials
           </p>
         </div>

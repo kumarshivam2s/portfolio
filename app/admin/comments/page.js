@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { getAdminHeaders } from "@/lib/adminClient";
 
 export default function ManageComments() {
   const router = useRouter();
@@ -16,11 +17,44 @@ export default function ManageComments() {
     fetchComments();
   }, []);
 
+  const fetchWithAdminRetry = async (url, opts = {}) => {
+    const headers = { ...(opts.headers || {}), ...getAdminHeaders() };
+    let res = await fetch(url, {
+      ...opts,
+      headers,
+      credentials: opts.credentials || "include",
+    });
+
+    if (res.status !== 401) return res;
+
+    try {
+      const seed = await fetch("/api/admin/sessions", {
+        method: "POST",
+        credentials: "include",
+        headers: getAdminHeaders(),
+      });
+      if (seed.ok) {
+        const sdata = await seed.json();
+        if (sdata?.admin_token) {
+          try {
+            sessionStorage.setItem("admin_token", sdata.admin_token);
+            sessionStorage.setItem("admin_login_ts", String(Date.now()));
+          } catch (e) {}
+        }
+      }
+    } catch (e) {}
+
+    const headers2 = { ...(opts.headers || {}), ...getAdminHeaders() };
+    return await fetch(url, {
+      ...opts,
+      headers: headers2,
+      credentials: opts.credentials || "include",
+    });
+  };
+
   const fetchComments = async () => {
     try {
-      const response = await fetch("/api/comments", {
-        credentials: "include",
-      });
+      const response = await fetchWithAdminRetry("/api/comments", {});
 
       if (response.status === 401) {
         router.push("/admin");
@@ -45,9 +79,10 @@ export default function ManageComments() {
     if (!confirm("Are you sure you want to delete this comment?")) return;
 
     try {
-      const response = await fetch(`/api/comments/${id}`, {
+      const headers = getAdminHeaders();
+      const response = await fetchWithAdminRetry(`/api/comments/${id}`, {
         method: "DELETE",
-        credentials: "include",
+        headers,
       });
 
       if (response.ok) {
@@ -64,11 +99,11 @@ export default function ManageComments() {
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      const response = await fetch(`/api/comments/${id}`, {
+      const headers = getAdminHeaders();
+      const response = await fetchWithAdminRetry(`/api/comments/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
-        credentials: "include",
       });
 
       if (response.ok) {

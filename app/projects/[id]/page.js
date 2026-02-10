@@ -85,7 +85,7 @@ export default function ProjectDetailPage() {
   if (error || !project) {
     return (
       <div className="min-h-screen p-4 sm:p-8 lg:p-16">
-        <div className="max-w-4xl w-full">
+        <div className="max-w-6xl mx-auto w-full">
           <Link
             href="/projects"
             className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors mb-8"
@@ -106,7 +106,7 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="min-h-screen p-4 sm:p-8 lg:p-16">
-      <div className="max-w-4xl w-full">
+      <div className="max-w-6xl mx-auto w-full">
         {/* Back Button */}
         <Link
           href="/projects"

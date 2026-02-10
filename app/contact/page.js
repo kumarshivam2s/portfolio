@@ -97,61 +97,63 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen p-8 lg:p-16">
-      <div className="max-w-2xl">
-        <h1 className="text-4xl lg:text-5xl font-bold mb-2">Contact</h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-12">
-          I respond faster to ideas than to spam.
-          <br />
-          Reach out if you want to connect, collaborate, or just say hi.
-        </p>
+      <div className="max-w-6xl mx-auto w-full">
+        <div className="max-w-3xl">
+          <h1 className="text-4xl lg:text-5xl font-bold mb-2">Contact</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-12">
+            I respond faster to ideas than to spam.
+            <br />
+            Reach out if you want to connect, collaborate, or just say hi.
+          </p>
 
-        {/* Contact Information */}
-        <div>
-          <h2 className="text-2xl font-bold mb-8 pb-2 border-b border-gray-200 dark:border-gray-800">
-            Connect
-          </h2>
-
-          <div className="space-y-4 mb-8">
-            {contactInfo.map((info, index) => {
-              const Icon = info.icon;
-              return (
-                <a
-                  key={index}
-                  href={info.href}
-                  className="flex items-start gap-3 p-3 rounded hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
-                >
-                  <Icon className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                      {info.label}
-                    </p>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">
-                      {info.value}
-                    </p>
-                  </div>
-                </a>
-              );
-            })}
-          </div>
-
+          {/* Contact Information */}
           <div>
-            <h3 className="font-semibold mb-4 text-sm">Follow</h3>
-            <div className="flex gap-3">
-              {socialLinks.map((social, index) => {
-                const Icon = social.icon;
+            <h2 className="text-2xl font-bold mb-8 pb-2 border-b border-gray-200 dark:border-gray-800">
+              Connect
+            </h2>
+
+            <div className="space-y-6 mb-8">
+              {contactInfo.map((info, index) => {
+                const Icon = info.icon;
                 return (
                   <a
                     key={index}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-9 h-9 flex items-center justify-center border border-gray-300 dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
-                    title={social.label}
+                    href={info.href}
+                    className="flex items-start gap-4 p-6 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
                   >
-                    <Icon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <Icon className="w-6 h-6 text-gray-600 dark:text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-gray-100 text-base">
+                        {info.label}
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-400 text-base">
+                        {info.value}
+                      </p>
+                    </div>
                   </a>
                 );
               })}
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4 text-sm">Follow</h3>
+              <div className="flex gap-4">
+                {socialLinks.map((social, index) => {
+                  const Icon = social.icon;
+                  return (
+                    <a
+                      key={index}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-10 h-10 flex items-center justify-center border border-gray-300 dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
+                      title={social.label}
+                    >
+                      <Icon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    </a>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

@@ -68,20 +68,33 @@ export async function POST(request) {
       const accept = request.headers.get("accept") || "";
       const isHtml = accept.includes("text/html");
 
+      // Set an HTTP-only cookie for the admin token so other tabs and server-side checks can use it
+      const cookieOpts = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        maxAge: 60 * 60, // 1 hour
+      };
+
       if (isHtml) {
         const html = `<!doctype html><html><head><meta charset="utf-8"></head><body><script>try{sessionStorage.setItem('admin_token','${token}');sessionStorage.setItem('admin_login_ts',String(Date.now()));}catch(e){}window.location.href='/admin';</script></body></html>`;
-        return new NextResponse(html, {
+        const resp = new NextResponse(html, {
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
+        resp.cookies.set("admin_token", token, cookieOpts);
+        return resp;
       }
 
       // JSON response for XHR/fetch clients — client should save token in sessionStorage
-      return NextResponse.json({
+      const resp = NextResponse.json({
         success: true,
         message: "Login successful",
         admin: true,
         admin_token: token,
       });
+      resp.cookies.set("admin_token", token, cookieOpts);
+      return resp;
     }
 
     console.log("Invalid credentials");

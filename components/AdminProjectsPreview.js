@@ -11,7 +11,7 @@ export default function AdminProjectsPreview() {
     let mounted = true;
     (async () => {
       try {
-        const { getAdminHeaders } = await import("@/lib/admin");
+        const { getAdminHeaders } = await import("@/lib/adminClient");
         const headers = getAdminHeaders();
 
         const res = await fetch("/api/projects", { headers });

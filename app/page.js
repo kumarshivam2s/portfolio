@@ -5,14 +5,46 @@ import ProfileTeaser from "@/components/ProfileTeaser";
 import SearchBar from "@/components/SearchBar";
 import Testimonials from "@/components/Testimonials";
 import FeatureDisabled from "@/components/FeatureDisabled";
+import dynamic from "next/dynamic";
 
 import { useEffect, useState } from "react";
 
+const AdminHomePreview = dynamic(
+  () => import("@/components/AdminHomePreview"),
+  {
+    ssr: false,
+  },
+);
+
 export default function Home() {
   const [settings, setSettings] = useState(null);
+  const [adminView, setAdminView] = useState(false);
 
   useEffect(() => {
     let mounted = true;
+
+    // Check for per-tab admin view (sessionStorage) or query param and enable preview immediately
+    try {
+      const stored = sessionStorage.getItem("admin_view");
+      if (stored) {
+        setAdminView(true);
+      } else {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get("admin_view")) {
+          try {
+            sessionStorage.setItem(
+              "admin_view",
+              JSON.stringify({
+                path: window.location.pathname,
+                ts: Date.now(),
+              }),
+            );
+          } catch (e) {}
+          setAdminView(true);
+        }
+      }
+    } catch (e) {}
+
     fetchSettings();
 
     // If settings fetch hangs or fails to resolve quickly, provide sensible defaults so the page doesn't show indefinite "Loading" blocks
@@ -35,6 +67,8 @@ export default function Home() {
 
     const onStorage = (e) => {
       if (e.key === "settings_updated_at") fetchSettings();
+      if (e.key === "admin_view")
+        setAdminView(Boolean(sessionStorage.getItem("admin_view")));
     };
     window.addEventListener("storage", onStorage);
     return () => {
@@ -61,6 +95,11 @@ export default function Home() {
     }
   };
 
+  // If admin preview is enabled for this tab, show the client-side admin home preview (quick, uses per-tab token)
+  if (adminView) {
+    return <AdminHomePreview />;
+  }
+
   // If maintenance mode is enabled, show the maintenance message to visitors
   if (settings && settings.maintenanceMode) {
     return (
@@ -76,7 +115,7 @@ export default function Home() {
   }
 
   const loader = (
-    <div className="border border-gray-200 dark:border-gray-800 p-6 hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer">
+    <div className="border border-gray-200 dark:border-gray-800 p-8 hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer">
       <h3 className="text-lg font-semibold mb-2">Loading</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">Loading...</p>
     </div>
@@ -84,7 +123,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen p-8 lg:p-16">
-      <div className="max-w-4xl">
+      <div className="max-w-6xl mx-auto w-full">
         <h1 className="text-4xl lg:text-5xl font-bold mb-4">Welcome</h1>
 
         <p className="text-base text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
@@ -99,9 +138,9 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Link href="/about">
-            <div className="border border-gray-200 dark:border-gray-800 p-6 hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer">
-              <h3 className="text-lg font-semibold mb-2">About</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="border border-gray-200 dark:border-gray-800 p-8 hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer">
+              <h3 className="text-xl font-semibold mb-2">About</h3>
+              <p className="text-base text-gray-600 dark:text-gray-400">
                 About me and background.
               </p>
             </div>
@@ -111,9 +150,9 @@ export default function Home() {
             <>{loader}</>
           ) : settings.showResume ? (
             <Link href="/resume">
-              <div className="border border-gray-200 dark:border-gray-800 p-6 hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer">
-                <h3 className="text-lg font-semibold mb-2">Resume</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="border border-gray-200 dark:border-gray-800 p-8 hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer">
+                <h3 className="text-xl font-semibold mb-2">Resume</h3>
+                <p className="text-base text-gray-600 dark:text-gray-400">
                   My experience and skills.
                 </p>
               </div>
@@ -126,9 +165,9 @@ export default function Home() {
             <>{loader}</>
           ) : settings.showProjects ? (
             <Link href="/projects">
-              <div className="border border-gray-200 dark:border-gray-800 p-6 hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer">
-                <h3 className="text-lg font-semibold mb-2">Projects</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="border border-gray-200 dark:border-gray-800 p-8 hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer">
+                <h3 className="text-xl font-semibold mb-2">Projects</h3>
+                <p className="text-base text-gray-600 dark:text-gray-400">
                   Selected projects and case studies.
                 </p>
               </div>
@@ -139,9 +178,9 @@ export default function Home() {
             <>{loader}</>
           ) : settings.showBlog ? (
             <Link href="/blog">
-              <div className="border border-gray-200 dark:border-gray-800 p-6 hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer">
-                <h3 className="text-lg font-semibold mb-2">Blog</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="border border-gray-200 dark:border-gray-800 p-8 hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer">
+                <h3 className="text-xl font-semibold mb-2">Blog</h3>
+                <p className="text-base text-gray-600 dark:text-gray-400">
                   Thoughts and insights on technology.
                 </p>
               </div>

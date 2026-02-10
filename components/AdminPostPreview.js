@@ -13,7 +13,7 @@ export default function AdminPostPreview({ id }) {
     let mounted = true;
     (async () => {
       try {
-        const { getAdminHeaders } = await import("@/lib/admin");
+        const { getAdminHeaders } = await import("@/lib/adminClient");
         const headers = getAdminHeaders();
 
         const res = await fetch(`/api/posts/${id}`, { headers });
@@ -46,7 +46,7 @@ export default function AdminPostPreview({ id }) {
     }
   };
 
-  if (loading) return <div className="p-6">Loading post preview…</div>;
+  if (loading) return <div className="p-8">Loading post preview…</div>;
   if (error)
     return <div className="p-6 text-red-600 dark:text-red-400">{error}</div>;
   if (!post)
@@ -56,7 +56,7 @@ export default function AdminPostPreview({ id }) {
 
   return (
     <div className="min-h-screen p-4 sm:p-8 lg:p-16">
-      <div className="max-w-4xl w-full">
+      <div className="max-w-6xl mx-auto w-full">
         <h1 className="text-4xl font-bold mb-3">{post.title}</h1>
         <div className="flex gap-4 text-sm text-gray-500 dark:text-gray-400 mb-6">
           <div className="flex items-center gap-1.5">

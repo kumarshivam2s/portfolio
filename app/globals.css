@@ -122,7 +122,6 @@ body {
   transition: none !important;
 }
 
-
 h1,
 h2,
 h3,
@@ -312,6 +311,20 @@ a {
 
 .blog-content a {
   @apply text-blue-600 dark:text-blue-400 hover:underline;
+}
+
+/* Admin UI adjustments */
+.admin-ui {
+  /* Slightly larger base font for better legibility in admin panels */
+  font-size: 17px;
+}
+
+.admin-ui .text-sm {
+  font-size: 0.95rem;
+}
+
+.admin-ui .text-xs {
+  font-size: 0.825rem;
 }
 
 /* Animation utilities */

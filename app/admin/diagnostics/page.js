@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-export default function DiagnosticsPage () {
+export default function DiagnosticsPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +29,7 @@ export default function DiagnosticsPage () {
 
   return (
     <div className="min-h-screen p-8 lg:p-16">
-      <div className="max-w-4xl">
+      <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <Link
             href="/admin"

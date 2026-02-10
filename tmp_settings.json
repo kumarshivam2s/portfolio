@@ -1,1 +1,4 @@
-﻿{" maintenanceMode\:true,\adminEmail\:\test@example.com\}
+﻿{
+  "maintenanceMode": false,
+  "adminEmail": "test@example.com"
+}

@@ -111,7 +111,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="min-h-screen p-8 lg:p-16">
-      <div className="max-w-6xl">
+      <div className="max-w-6xl mx-auto w-full">
         <h1 className="text-4xl lg:text-5xl font-bold mb-2">Projects</h1>
         <p className="text-gray-600 dark:text-gray-400 mb-12">
           Selection of projects and work
@@ -131,11 +131,11 @@ export default function ProjectsPage() {
             {projects.map((project) => (
               <div
                 key={project._id}
-                className="group p-6 border border-gray-200 dark:border-gray-800 rounded-lg hover:border-gray-400 dark:hover:border-gray-600 transition-all duration-300 flex flex-col h-[280px]"
+                className="group p-8 border border-gray-200 dark:border-gray-800 rounded-lg hover:border-gray-400 dark:hover:border-gray-600 transition-all duration-300 flex flex-col h-[320px]"
               >
                 {/* Title - clickable */}
                 <Link href={`/projects/${project._id}`}>
-                  <h2 className="text-xl font-semibold mb-3 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors cursor-pointer hover:underline">
+                  <h2 className="text-2xl font-semibold mb-3 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors cursor-pointer hover:underline">
                     {project.title}
                     {project.featured && (
                       <span className="ml-2 text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100 px-2 py-0.5 rounded no-underline">
@@ -146,7 +146,7 @@ export default function ProjectsPage() {
                 </Link>
 
                 {/* Description - fixed height */}
-                <p className="text-gray-600 dark:text-gray-500 text-sm mb-4 leading-relaxed line-clamp-3 min-h-[60px]">
+                <p className="text-gray-600 dark:text-gray-500 text-base mb-4 leading-relaxed line-clamp-3 min-h-[60px]">
                   {project.description}
                 </p>
 

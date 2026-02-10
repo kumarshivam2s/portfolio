@@ -45,10 +45,10 @@ export default function NewPost() {
     setLoading(true);
 
     try {
-      const { getAdminHeaders } = await import("@/lib/admin");
+      const headers = getAdminHeaders();
       const response = await fetch("/api/posts", {
         method: "POST",
-        headers: { ...getAdminHeaders(), "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
           slug: slug || generateSlug(title),
@@ -81,7 +81,7 @@ export default function NewPost() {
 
   return (
     <div className="min-h-screen p-8 lg:p-16 bg-gray-50 dark:bg-gray-950">
-      <div className="max-w-4xl">
+      <div className="max-w-4xl mx-auto">
         <Link
           href="/admin"
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors mb-6"

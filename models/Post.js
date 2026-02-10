@@ -11,7 +11,8 @@ export async function getAllPosts(limit = null) {
       .find({
         $or: [{ status: "published" }, { status: "Published" }],
       })
-      .sort({ createdAt: -1 });
+      // Prefer explicit position ordering; fall back to createdAt for stability
+      .sort({ position: 1, createdAt: -1 });
 
     if (limit) {
       query = query.limit(limit);
@@ -33,7 +34,7 @@ export async function getAllPostsAdmin() {
     const posts = await db
       .collection("posts")
       .find({})
-      .sort({ createdAt: -1 })
+      .sort({ position: 1, createdAt: -1 })
       .toArray();
     return JSON.parse(JSON.stringify(posts));
   } catch (error) {
@@ -83,6 +84,15 @@ export async function createPost(postData) {
     const client = await clientPromise;
     const db = client.db("portfolio");
 
+    // Determine next position (append at end)
+    const top = await db
+      .collection("posts")
+      .find({})
+      .sort({ position: -1 })
+      .limit(1)
+      .toArray();
+    const nextPos = top.length ? (top[0].position || 0) + 1 : 1;
+
     const post = {
       ...postData,
       createdAt: new Date(),
@@ -93,6 +103,7 @@ export async function createPost(postData) {
       author: postData.author || "Admin",
       tags: postData.tags || [],
       scheduledPublishDate: postData.scheduledPublishDate || null,
+      position: nextPos,
     };
 
     const result = await db.collection("posts").insertOne(post);
@@ -123,6 +134,73 @@ export async function updatePost(id, postData) {
     return { _id: id, ...update };
   } catch (error) {
     console.error("Error updating post:", error);
+    throw error;
+  }
+}
+
+export async function swapPostPosition(id, direction) {
+  try {
+    const client = await clientPromise;
+    const db = client.db("portfolio");
+
+    // Ensure positions are set for ALL documents. If any are missing, normalize positions deterministically by createdAt descending
+    const missingPosCount = await db
+      .collection("posts")
+      .countDocuments({ position: { $exists: false } });
+
+    if (missingPosCount > 0) {
+      const all = await db
+        .collection("posts")
+        .find({})
+        .sort({ createdAt: -1 })
+        .toArray();
+      for (let i = 0; i < all.length; i++) {
+        await db
+          .collection("posts")
+          .updateOne({ _id: all[i]._id }, { $set: { position: i + 1 } });
+      }
+    }
+
+    const post = await db
+      .collection("posts")
+      .findOne({ _id: new ObjectId(id) });
+
+    if (!post) throw new Error("Post not found");
+
+    const currentPos = post.position || 0;
+    let neighbor;
+
+    if (direction === "up") {
+      neighbor = await db
+        .collection("posts")
+        .find({ position: { $lt: currentPos } })
+        .sort({ position: -1 })
+        .limit(1)
+        .toArray();
+      neighbor = neighbor[0];
+    } else {
+      neighbor = await db
+        .collection("posts")
+        .find({ position: { $gt: currentPos } })
+        .sort({ position: 1 })
+        .limit(1)
+        .toArray();
+      neighbor = neighbor[0];
+    }
+
+    if (!neighbor) return false; // cannot move
+
+    // swap positions
+    await db
+      .collection("posts")
+      .updateOne({ _id: post._id }, { $set: { position: neighbor.position } });
+    await db
+      .collection("posts")
+      .updateOne({ _id: neighbor._id }, { $set: { position: currentPos } });
+
+    return true;
+  } catch (error) {
+    console.error("Error swapping post position:", error);
     throw error;
   }
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { generateSlug } from "@/lib/utils";
+import { getAdminHeaders } from "@/lib/adminClient";
 
 const iconOptions = [
   { value: "github", label: "GitHub" },
@@ -56,7 +57,9 @@ export default function EditProject() {
 
   const fetchProject = async () => {
     try {
+      const headers = getAdminHeaders();
       const response = await fetch(`/api/projects/${projectId}`, {
+        headers,
         credentials: "include",
       });
 
@@ -171,9 +174,10 @@ export default function EditProject() {
             : formData.technologies || [],
       };
 
+      const headers = getAdminHeaders();
       const response = await fetch(`/api/projects/${projectId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify(submitData),
         credentials: "include",
       });
@@ -201,7 +205,7 @@ export default function EditProject() {
 
   return (
     <div className="min-h-screen p-8 lg:p-16">
-      <div className="max-w-3xl">
+      <div className="max-w-3xl mx-auto">
         <Link
           href="/admin"
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors mb-6"

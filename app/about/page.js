@@ -3,7 +3,7 @@
 export default function AboutPage() {
   return (
     <div className="min-h-screen p-8 lg:p-16">
-      <div className="max-w-4xl">
+      <div className="max-w-6xl mx-auto w-full">
         <h1 className="text-4xl lg:text-5xl font-bold mb-2">About</h1>
         <p className="text-gray-600 dark:text-gray-400 mb-12">
           Background and interest
@@ -45,9 +45,9 @@ export default function AboutPage() {
               <li className="flex gap-3">
                 <span className="text-blue-600 dark:text-blue-400">•</span>
                 <span>
-                   My journey into tech began with a simple “Hello World,” 
-                   after I couldn’t clear the NEET exam during COVID. What 
-                   felt like a setback became the turning point of my career.
+                  My journey into tech began with a simple “Hello World,” after
+                  I couldn’t clear the NEET exam during COVID. What felt like a
+                  setback became the turning point of my career.
                 </span>
               </li>
               <li className="flex gap-3">
@@ -90,20 +90,22 @@ export default function AboutPage() {
             <ul className="space-y-3 text-gray-700 dark:text-gray-300">
               <li className="flex gap-3">
                 <span className="text-blue-600 dark:text-blue-400">•</span>
-                <span>I love the idea of traveling — even if budget and time 
-                  don’t always allow it, I’m always planning the next adventure.</span>
+                <span>
+                  I love the idea of traveling — even if budget and time don’t
+                  always allow it, I’m always planning the next adventure.
+                </span>
               </li>
               <li className="flex gap-3">
                 <span className="text-blue-600 dark:text-blue-400">•</span>
                 <span>
-                  I speak Hindi, English, and a variety of slang “dialects” 
+                  I speak Hindi, English, and a variety of slang “dialects”
                   depending on the vibe.
                 </span>
               </li>
               <li className="flex gap-3">
                 <span className="text-blue-600 dark:text-blue-400">•</span>
                 <span>
-                  I spend my free time watching tech vlogs and constantly 
+                  I spend my free time watching tech vlogs and constantly
                   gathering new ideas and insights.
                 </span>
               </li>
@@ -116,8 +118,8 @@ export default function AboutPage() {
               <li className="flex gap-3">
                 <span className="text-blue-600 dark:text-blue-400">•</span>
                 <span>
-                  I’m building a DIY life — learning, experimenting, 
-                  and figuring things out hands-on.
+                  I’m building a DIY life — learning, experimenting, and
+                  figuring things out hands-on.
                 </span>
               </li>
             </ul>

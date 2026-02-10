@@ -47,15 +47,43 @@ export default function AdminProxyPage({ params }) {
     (async () => {
       try {
         // Quick check to see if server recognizes this tab as an admin session
-        const { getAdminHeaders } = await import("@/lib/admin");
+        const { getAdminHeaders } = await import("@/lib/adminClient");
         const headers = getAdminHeaders();
-        const res = await fetch("/api/posts", { headers });
+        const res = await fetch("/api/admin/validate", {
+          headers,
+          credentials: "include",
+        });
         if (!mounted) return;
 
-        if (res.status === 200) {
+        if (res.ok) {
           // session valid — set admin_view and mark this tab as an admin session
           setSessionValid(true);
           try {
+            // If we don't yet have a per-tab token, try to create one from cookie/session for this tab
+            try {
+              const existing = sessionStorage.getItem("admin_token");
+              if (!existing) {
+                const sres = await fetch("/api/admin/sessions", {
+                  method: "POST",
+                  credentials: "include",
+                });
+                if (sres.ok) {
+                  const sdata = await sres.json();
+                  if (sdata?.admin_token) {
+                    try {
+                      sessionStorage.setItem("admin_token", sdata.admin_token);
+                      sessionStorage.setItem(
+                        "admin_login_ts",
+                        String(Date.now()),
+                      );
+                    } catch (e) {}
+                  }
+                }
+              }
+            } catch (err) {
+              // ignore session seeding failures
+            }
+
             // Mark this tab so it behaves like an admin tab (clears when tab closes)
             sessionStorage.setItem("admin_login_ts", String(Date.now()));
           } catch (e) {}
@@ -104,7 +132,7 @@ export default function AdminProxyPage({ params }) {
 
   return (
     <div className="min-h-screen p-6 flex items-center justify-center">
-      <div className="max-w-2xl w-full text-center">
+      <div className="max-w-2xl mx-auto w-full text-center">
         <div className="mb-6">
           <h2 className="text-xl font-semibold">Opening public page…</h2>
           {sessionValid === null && (

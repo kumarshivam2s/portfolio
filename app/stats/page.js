@@ -95,11 +95,11 @@ export default function StatsPage() {
   ];
 
   const StatCard = ({ label, value }) => (
-    <div className="p-4 border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-none dark:hover:shadow-md dark:hover:shadow-gray-900/50 transition-all duration-300 bg-white dark:bg-transparent">
+    <div className="p-6 min-h-[110px] border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-none dark:hover:shadow-md dark:hover:shadow-gray-900/50 transition-all duration-300 bg-white dark:bg-transparent rounded-lg">
       <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
         {label}
       </p>
-      <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+      <p className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">
         {value}
       </p>
     </div>
@@ -107,7 +107,7 @@ export default function StatsPage() {
 
   return (
     <div className="min-h-screen p-8 lg:p-16">
-      <div className="max-w-6xl">
+      <div className="max-w-6xl mx-auto w-full">
         <h1 className="text-4xl lg:text-5xl font-bold mb-2">Statistics</h1>
         <p className="text-gray-600 dark:text-gray-400 mb-12">
           By the numbers and beyond

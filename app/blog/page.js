@@ -41,7 +41,7 @@ export default function BlogPage() {
 
   const fetchPosts = async () => {
     try {
-      const { getAdminHeaders } = await import("@/lib/admin");
+      const { getAdminHeaders } = await import("@/lib/adminClient");
       const headers = getAdminHeaders();
       const response = await fetch("/api/posts", { headers });
       const data = await response.json();
@@ -117,7 +117,7 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen p-4 sm:p-8 lg:p-16">
-      <div className="max-w-4xl w-full">
+      <div className="max-w-6xl mx-auto w-full">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2">
           Blog
         </h1>
@@ -139,9 +139,9 @@ export default function BlogPage() {
             {posts.map((post, index) => (
               <article key={post._id} className="group">
                 <Link href={`/blog/${post._id}`}>
-                  <div className="p-6 border border-gray-200 dark:border-gray-800 rounded hover:border-gray-400 dark:hover:border-gray-600 transition-all">
+                  <div className="p-8 border border-gray-200 dark:border-gray-800 rounded hover:border-gray-400 dark:hover:border-gray-600 transition-all">
                     {post.image && (
-                      <div className="w-full h-40 mb-4 rounded overflow-hidden bg-gray-200 dark:bg-gray-800">
+                      <div className="w-full h-48 mb-4 rounded overflow-hidden bg-gray-200 dark:bg-gray-800">
                         <img
                           src={post.image}
                           alt={post.title}
@@ -150,11 +150,11 @@ export default function BlogPage() {
                       </div>
                     )}
 
-                    <h2 className="text-xl font-semibold mb-3 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
+                    <h2 className="text-2xl font-semibold mb-3 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
                       {post.title}
                     </h2>
 
-                    <p className="text-gray-600 dark:text-gray-500 text-sm mb-4 line-clamp-2">
+                    <p className="text-gray-600 dark:text-gray-500 text-base mb-4 line-clamp-2">
                       {post.excerpt}
                     </p>
 
