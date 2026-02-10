@@ -13,6 +13,21 @@ const DEFAULTS = {
   maintenanceMode: false,
 };
 
+function maskEmail(e) {
+  try {
+    if (!e || typeof e !== "string" || !e.includes("@")) return null;
+    const [local, domain] = e.split("@");
+    const localMasked = local.length > 1 ? local[0] + "***" : "*";
+    const domainParts = domain.split(".");
+    const domainMain = domainParts[0] || "";
+    const domainMasked = domainMain.length > 1 ? domainMain[0] + "***" : "*";
+    const rest = domainParts.slice(1).join(".");
+    return `${localMasked}@${domainMasked}${rest ? "." + rest : ""}`;
+  } catch (err) {
+    return null;
+  }
+}
+
 export async function getSettings() {
   try {
     const client = await clientPromise;
@@ -24,8 +39,10 @@ export async function getSettings() {
     const updatedAt = doc?.updatedAt || null;
 
     // grab most recent change log entry to show who last changed settings
-    const lastLog = await db.collection("settings_log").findOne({}, { sort: { updatedAt: -1 } });
-    const lastChangedBy = lastLog?.adminEmail || null;
+    const lastLog = await db
+      .collection("settings_log")
+      .findOne({}, { sort: { updatedAt: -1 } });
+    const lastChangedBy = lastLog?.adminEmailMasked || null;
 
     return { ...DEFAULTS, ...values, updatedAt, lastChangedBy };
   } catch (error) {
@@ -51,12 +68,12 @@ export async function updateSettings(updates = {}, adminEmail = null) {
       .collection("settings")
       .updateOne({ _id: "site_settings" }, { $set: setObj }, { upsert: true });
 
-    // Write a change log entry for diagnostics / history (include admin email when available)
+    // Write a change log entry for diagnostics / history (store masked admin email when available)
     try {
       await db.collection("settings_log").insertOne({
         updates,
         updatedAt: setObj.updatedAt,
-        adminEmail: adminEmail || null,
+        adminEmailMasked: adminEmail ? maskEmail(adminEmail) : null,
       });
     } catch (logErr) {
       console.error("Failed to write settings log:", logErr);

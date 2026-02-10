@@ -424,24 +424,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Diagnostics */}
-            <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-yellow-600 dark:hover:border-yellow-400 transition-colors self-start md:col-span-1 lg:col-span-1 flex flex-col h-full">
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Diagnostics</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                  View raw settings document and recent change logs.
-                </p>
-              </div>
-              <div className="mt-auto">
-                <Link
-                  href="/admin/diagnostics"
-                  className="inline-block px-4 py-2 min-w-[140px] text-center bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
-                >
-                  Diagnostics
-                </Link>
-              </div>
-            </div>
-
             {/* Live Controls - full width on md+ */}
             <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-orange-500 dark:hover:border-orange-300 focus-within:border-orange-500 transition-colors flex flex-col h-full md:col-span-2 lg:col-span-4">
               <div className="mb-4">

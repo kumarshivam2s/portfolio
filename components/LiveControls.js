@@ -70,8 +70,8 @@ export default function LiveControls() {
     setSaving(true);
     setError("");
     try {
-      const adminEmail = typeof window !== "undefined" ? sessionStorage.getItem("admin_email") : null;
-      const payload = adminEmail ? { ...newSettings, adminEmail } : { ...newSettings };
+      // Do not transmit admin email to the server to avoid storing PII
+      const payload = { ...newSettings };
 
       const res = await fetch("/api/settings", {
         method: "PUT",
@@ -93,7 +93,9 @@ export default function LiveControls() {
         }
 
         // retry PUT once
-        const retryPayload = adminEmail ? { ...newSettings, adminEmail } : { ...newSettings };
+        const retryPayload = adminEmail
+          ? { ...newSettings, adminEmail }
+          : { ...newSettings };
         const retry = await fetch("/api/settings", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -229,7 +231,10 @@ export default function LiveControls() {
 
         {(settings?.lastChangedBy || settings?.updatedAt) && (
           <p className="text-xs text-gray-500 ml-auto">
-            Last changed by: {settings?.lastChangedBy || "—"}{settings?.updatedAt ? ` • ${new Date(settings.updatedAt).toLocaleString()}` : ""}
+            Last changed by: {settings?.lastChangedBy || "—"}
+            {settings?.updatedAt
+              ? ` • ${new Date(settings.updatedAt).toLocaleString()}`
+              : ""}
           </p>
         )}
       </div>

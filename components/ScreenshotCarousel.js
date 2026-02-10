@@ -27,6 +27,8 @@ export default function ScreenshotCarousel({ images = [] }) {
   }, [hasMultiple]);
 
   // handle scroll to update index and circular jump
+  const isProgrammaticRef = useRef(false);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -34,6 +36,7 @@ export default function ScreenshotCarousel({ images = [] }) {
     let isScrolling;
 
     const onScroll = () => {
+      if (isProgrammaticRef.current) return;
       clearTimeout(isScrolling);
       isScrolling = setTimeout(() => {
         const w = el.clientWidth;
@@ -60,6 +63,29 @@ export default function ScreenshotCarousel({ images = [] }) {
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
   }, [slides, hasMultiple]);
+
+  // mobile: when touch interaction ends near cloned edges, perform a smooth wrap
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !hasMultiple) return;
+
+    const onTouchEnd = () => {
+      const w = el.clientWidth;
+      const rawIndex = Math.round(el.scrollLeft / w);
+      if (rawIndex === 0) {
+        isProgrammaticRef.current = true;
+        scrollToReal(images.length - 1, "smooth");
+        setTimeout(() => (isProgrammaticRef.current = false), 500);
+      } else if (rawIndex === slides.length - 1) {
+        isProgrammaticRef.current = true;
+        scrollToReal(0, "smooth");
+        setTimeout(() => (isProgrammaticRef.current = false), 500);
+      }
+    };
+
+    el.addEventListener("touchend", onTouchEnd);
+    return () => el.removeEventListener("touchend", onTouchEnd);
+  }, [images.length, slides, hasMultiple]);
 
   const scrollToReal = (realIndex, behavior = "smooth") => {
     const el = containerRef.current;
