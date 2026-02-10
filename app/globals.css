@@ -347,3 +347,14 @@ a {
 .animate-delay-500 {
   animation-delay: 0.5s;
 }
+
+/* Sidebar collapse utility: when .sidebar-collapsed is on <html>, hide the desktop sidebar and expand main */
+@media (min-width: 1024px) {
+  html.sidebar-collapsed .desktop-sidebar {
+    display: none !important;
+  }
+
+  html.sidebar-collapsed .main-content {
+    margin-left: 0 !important;
+  }
+}

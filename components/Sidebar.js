@@ -40,7 +40,35 @@ export default function Sidebar() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isAdminMode, setIsAdminMode] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
+  useEffect(() => {
+    // load persisted value
+    try {
+      const v = localStorage.getItem("sidebar_collapsed");
+      const val = v === "1";
+      setCollapsed(val);
+      if (val) document.documentElement.classList.add("sidebar-collapsed");
+    } catch (e) {}
+  }, []);
+
+  const toggleCollapsed = () => {
+    try {
+      const next = !collapsed;
+      setCollapsed(next);
+      if (next) {
+        localStorage.setItem("sidebar_collapsed", "1");
+        document.documentElement.classList.add("sidebar-collapsed");
+      } else {
+        localStorage.removeItem("sidebar_collapsed");
+        document.documentElement.classList.remove("sidebar-collapsed");
+      }
+      // notify other tabs
+      try {
+        window.dispatchEvent(new Event("sidebar:toggle"));
+      } catch (e) {}
+    } catch (e) {}
+  };
   useEffect(() => {
     setMounted(true);
     try {
@@ -97,7 +125,7 @@ export default function Sidebar() {
             href={isAdminMode ? "/admin" : "/"}
             className="text-[26px] font-bold"
           >
-            PORTFOLIO
+            SHIVAM's PORTFOLIO
           </Link>
           <div className="flex items-center gap-4">
             {mounted && (
@@ -212,8 +240,48 @@ export default function Sidebar() {
       )}
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 h-screen w-[28rem] bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800">
-        <div className="flex flex-col h-full px-4 pt-3 pb-4">
+      <aside className="desktop-sidebar hidden lg:flex lg:flex-col fixed left-0 top-0 h-screen w-[28rem] bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800">
+        <div className="flex flex-col h-full px-4 pt-3 pb-4 relative">
+          {/* Desktop collapse toggle */}
+          <button
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="hidden lg:inline-flex items-center justify-center absolute top-3 right-3 w-9 h-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            {collapsed ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            )}
+          </button>
+
           {/* Profile Section */}
           <Link
             href="/"

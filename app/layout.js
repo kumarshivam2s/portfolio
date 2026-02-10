@@ -87,7 +87,7 @@ export default function RootLayout({ children }) {
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <div className="flex min-h-screen">
             <Sidebar />
-            <main className="flex-1 ml-0 lg:ml-[28rem] pt-[65px] lg:pt-0 text-[18px]">
+            <main className="main-content flex-1 ml-0 lg:ml-[28rem] pt-[65px] lg:pt-0 text-[18px]">
               {children}
             </main>
             {/* Show an admin view indicator overlay when admin_view is set in sessionStorage */}
