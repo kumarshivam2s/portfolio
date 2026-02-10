@@ -252,7 +252,7 @@ export default function Sidebar() {
             </h3>
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 leading-relaxed">
               Hi, I’m Kumar Shivam — turning chaos into clean pipelines since
-              2023.
+              2024.
             </p>
           </div>
 

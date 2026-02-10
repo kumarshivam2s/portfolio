@@ -3,7 +3,7 @@ import { swapProjectPosition } from "@/models/Project";
 
 export async function POST(request, { params }) {
   try {
-    const { slug } = params;
+    const { id } = params;
     const cookieToken = request.cookies.get("admin_token")?.value;
     const headerToken = request.headers.get("x-admin-token");
     const token = headerToken || cookieToken;
@@ -20,7 +20,7 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Invalid direction" }, { status: 400 });
     }
 
-    const result = await swapProjectPosition(slug, direction);
+    const result = await swapProjectPosition(id, direction);
     if (!result) {
       return NextResponse.json({ error: "Cannot move" }, { status: 400 });
     }

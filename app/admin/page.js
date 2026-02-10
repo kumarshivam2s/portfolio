@@ -664,7 +664,7 @@ export default function AdminDashboard() {
           </form>
 
           <p className="text-xs text-gray-600 dark:text-gray-400 text-center mt-3">
-            Check .env.local for admin credentials
+            Admin roXX!🤘
           </p>
         </div>
       </div>
