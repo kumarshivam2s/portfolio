@@ -240,16 +240,17 @@ export default function Sidebar() {
       )}
 
       {/* Desktop Sidebar */}
-      <aside className="desktop-sidebar hidden lg:flex lg:flex-col fixed left-0 top-0 h-screen w-[28rem] bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800">
+      <aside className="desktop-sidebar hidden lg:flex lg:flex-col fixed left-0 top-0 h-screen w-[28rem] bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-hidden">
         <div className="flex flex-col h-full px-4 pt-3 pb-4 relative">
-          {/* Desktop collapse toggle - narrow icon that sticks to the right edge */}
+          {/* Desktop collapse toggle - narrow icon that sticks slightly out to the right edge */}
           <button
             onClick={toggleCollapsed}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="hidden lg:inline-flex items-center justify-center absolute top-3 -right-3 w-10 h-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-l-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors transform"
+            className="hidden lg:inline-flex items-center justify-center absolute top-6 -right-2.5 w-10 h-20 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-l-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors transform"
           >
             {collapsed ? (
+              /* When collapsed, show right arrow to expand */
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -265,12 +266,13 @@ export default function Sidebar() {
                 />
               </svg>
             ) : (
+              /* When expanded, show left arrow to collapse */
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                className="w-4 h-4 rotate-180"
+                className="w-4 h-4"
               >
                 <path
                   strokeLinecap="round"
@@ -411,20 +413,20 @@ export default function Sidebar() {
         onClick={toggleCollapsed}
         aria-label="Open sidebar"
         title="Open sidebar"
-        className="open-sidebar-btn hidden items-center justify-center fixed top-3 left-0 z-50 -ml-3 w-10 h-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="open-sidebar-btn hidden items-center justify-center fixed top-6 -left-2.5 z-50 w-10 h-20 bg-blue-600 dark:bg-gray-800 border border-blue-600 dark:border-gray-700 rounded-r-lg hover:bg-blue-700 dark:hover:bg-gray-700 transition-colors shadow-sm text-white"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          className="w-4 h-4"
+          className="w-4 h-4 text-white"
         >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="2"
-            d="M15 19l-7-7 7-7"
+            d="M9 5l7 7-7 7"
           />
         </svg>
       </button>
