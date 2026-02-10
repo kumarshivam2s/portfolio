@@ -341,7 +341,8 @@ export default function AdminDashboard() {
               <div>
                 <h3 className="text-lg font-semibold mb-3">Posts</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                  Write and manage blog posts: create, edit, feature, or delete posts
+                  Write and manage blog posts: create, edit, feature, or delete
+                  posts
                 </p>
               </div>
               <div className="flex gap-3 mt-auto">
@@ -365,7 +366,8 @@ export default function AdminDashboard() {
               <div>
                 <h3 className="text-lg font-semibold mb-3">Projects</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                  Add and manage projects with images, links, and feature toggles
+                  Add and manage projects with images, links, and feature
+                  toggles
                 </p>
               </div>
               <div className="flex gap-3 mt-auto">
@@ -387,7 +389,9 @@ export default function AdminDashboard() {
             {/* Moderate Comments */}
             <div className="p-6 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-purple-600 dark:hover:border-purple-400 transition-colors self-start md:col-span-1 lg:col-span-1 flex flex-col h-full">
               <div>
-                <h3 className="text-lg font-semibold mb-3">Moderate Comments</h3>
+                <h3 className="text-lg font-semibold mb-3">
+                  Moderate Comments
+                </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
                   Review, approve, or reject user comments
                 </p>
